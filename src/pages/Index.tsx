@@ -70,6 +70,22 @@ export default function Index() {
 
         <div className="flex items-center gap-2">
           <button
+            onClick={handleMuteToggle}
+            className={`p-2.5 rounded-full border transition-colors ${
+              isMuted
+                ? "bg-destructive/10 border-destructive/40 active:bg-destructive/20"
+                : "bg-white/80 border-[hsl(var(--border))] active:bg-[hsl(var(--muted))]"
+            }`}
+            aria-label={isMuted ? "Riattiva microfono" : "Silenzia microfono"}
+            title={isMuted ? "Riattiva microfono" : "Silenzia microfono"}
+          >
+            {isMuted ? (
+              <MicOff size={20} className="text-destructive" />
+            ) : (
+              <Mic size={20} className="text-[hsl(var(--muted-foreground))]" />
+            )}
+          </button>
+          <button
             onClick={handleClear}
             className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
             aria-label="Cancella cronologia"
@@ -83,6 +99,14 @@ export default function Index() {
             aria-label="Impostazioni"
           >
             <Settings size={20} className="text-[hsl(var(--muted-foreground))]" />
+          </button>
+          <button
+            onClick={handleLogout}
+            className="p-2.5 rounded-full bg-white/80 border border-destructive/40 active:bg-destructive/10 transition"
+            aria-label="Esci dall'app"
+            title="Esci dall'app"
+          >
+            <LogOut size={20} className="text-destructive" />
           </button>
         </div>
       </header>
