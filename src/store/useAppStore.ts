@@ -36,6 +36,10 @@ type AppState = {
   volume: number;
   fastMode: boolean;
   noiseReduction: boolean;
+  voiceName: string;
+  speechRate: number;
+  speechPitch: number;
+  clearMessages: () => void;
 
   setStatus: (s: AppStatus) => void;
   setSourceLangCode: (code: string) => void;
@@ -48,6 +52,9 @@ type AppState = {
   setVolume: (v: number) => void;
   setFastMode: (f: boolean) => void;
   setNoiseReduction: (n: boolean) => void;
+  setVoiceName: (v: string) => void;
+  setSpeechRate: (r: number) => void;
+  setSpeechPitch: (p: number) => void;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
