@@ -295,7 +295,7 @@ export function SettingsModal() {
       </DialogContent>
     </Dialog>
   );
-});
+}
 
 /* -------------------------------------------------------
    4️⃣  CONVERSATION VIEW — stile WhatsApp/Telegram
