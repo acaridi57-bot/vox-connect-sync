@@ -68,7 +68,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   volume: 80,
   fastMode: false,
   noiseReduction: true,
-  voiceName: '',
+  voiceName: 'Alice',
   speechRate: 0.9,
   speechPitch: 0.8,
   clearMessages: () => set({ messages: [] }),
