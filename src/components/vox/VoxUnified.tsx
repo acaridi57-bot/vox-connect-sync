@@ -177,9 +177,23 @@ export function SettingsModal() {
   const speechPitch = useAppStore((s) => s.speechPitch);
   const setSpeechPitch = useAppStore((s) => s.setSpeechPitch);
 
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+    const load = () => {
+      const all = window.speechSynthesis.getVoices() || [];
+      setVoices(all);
+      if (!voiceName && all.length) setVoiceName(all[0].name);
+    };
+    load();
+    window.speechSynthesis.onvoiceschanged = load;
+    return () => { window.speechSynthesis.onvoiceschanged = null; };
+  }, [voiceName, setVoiceName]);
+
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
-      <DialogContent className="rounded-3xl border-border bg-card">
+      <DialogContent className="rounded-3xl border-border bg-card max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-foreground text-xl font-bold">Impostazioni</DialogTitle>
         </DialogHeader>
@@ -227,10 +241,12 @@ export function SettingsModal() {
                 value={voiceName}
                 onChange={(e) => setVoiceName(e.target.value)}
               >
-                <option value="Alice">Alice</option>
-                <option value="Giulia">Giulia</option>
-                <option value="Luca">Luca</option>
-                <option value="Matteo">Matteo</option>
+                {voices.length === 0 && <option value="">Nessuna voce disponibile</option>}
+                {voices.map((v) => (
+                  <option key={v.name} value={v.name}>
+                    {v.name} ({v.lang})
+                  </option>
+                ))}
               </select>
               <button
                 className="h-11 px-4 rounded-2xl bg-primary text-primary-foreground font-medium text-sm"
