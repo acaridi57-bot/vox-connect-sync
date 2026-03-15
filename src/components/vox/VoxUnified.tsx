@@ -98,7 +98,7 @@ export function LanguageSelector() {
 export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
   const status = useAppStore((s) => s.status);
   const audioLevel = useAppStore((s) => s.audioLevel);
-  const isActive = status !== "idle";
+  
   const isListening = status === "listening";
   const isProcessing = status === "processing";
 
