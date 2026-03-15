@@ -3,11 +3,13 @@ import { Settings, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useMicrophone } from '@/hooks/useMicrophone';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { LanguageSelector } from '@/components/vox/LanguageSelector';
-import { ConversationView } from '@/components/vox/ConversationView';
-import { ListeningIndicator } from '@/components/vox/ListeningIndicator';
-import { SettingsModal } from '@/components/vox/SettingsModal';
-import logo from '@/assets/logo.png';
+import {
+  LanguageSelector,
+  ListeningIndicator,
+  SettingsModal,
+  ConversationView,
+  VoxLogo,
+} from '@/components/vox/VoxUnified';
 
 export default function Index() {
   const status = useAppStore((s) => s.status);
