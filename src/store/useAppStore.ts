@@ -87,4 +87,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setVolume: (v) => set({ volume: v }),
   setFastMode: (f) => set({ fastMode: f }),
   setNoiseReduction: (n) => set({ noiseReduction: n }),
+  setVoiceName: (v) => set({ voiceName: v }),
+  setSpeechRate: (r) => set({ speechRate: r }),
+  setSpeechPitch: (p) => set({ speechPitch: p }),
 }));
