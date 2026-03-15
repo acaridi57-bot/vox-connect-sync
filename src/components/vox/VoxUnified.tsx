@@ -93,7 +93,7 @@ export function LanguageSelector() {
 /* -------------------------------------------------------
    2️⃣  LISTENING INDICATOR
 ------------------------------------------------------- */
-export const ListeningIndicator = React.forwardRef<HTMLDivElement, { onToggle: () => void }>(function ListeningIndicator({ onToggle }, ref) {
+export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
   const status = useAppStore((s) => s.status);
   const audioLevel = useAppStore((s) => s.audioLevel);
 
@@ -101,7 +101,7 @@ export const ListeningIndicator = React.forwardRef<HTMLDivElement, { onToggle: (
   const isProcessing = status === "processing";
 
   return (
-    <div ref={ref} className="flex flex-col items-center">
+    <div className="flex flex-col items-center">
       <div className="relative">
         <AnimatePresence>
           {isListening && (
@@ -154,12 +154,12 @@ export const ListeningIndicator = React.forwardRef<HTMLDivElement, { onToggle: (
       </p>
     </div>
   );
-});
+}
 
 /* -------------------------------------------------------
    3️⃣  SETTINGS MODAL — tema verde + Sintesi Vocale
 ------------------------------------------------------- */
-export const SettingsModal = React.forwardRef<HTMLDivElement, {}>(function SettingsModal(_props, _ref) {
+export function SettingsModal() {
   const isOpen = useAppStore((s) => s.isSettingsOpen);
   const setOpen = useAppStore((s) => s.setSettingsOpen);
 
@@ -295,7 +295,7 @@ export const SettingsModal = React.forwardRef<HTMLDivElement, {}>(function Setti
       </DialogContent>
     </Dialog>
   );
-});
+}
 
 /* -------------------------------------------------------
    4️⃣  CONVERSATION VIEW — stile WhatsApp/Telegram
