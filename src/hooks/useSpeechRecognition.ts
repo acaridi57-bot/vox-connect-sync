@@ -5,42 +5,71 @@ import { speakTextWithSettings } from '@/lib/speech/tts';
 
 // ── Inline translation — no external module needed ──────────────────────────
 async function doTranslate(text: string, src: string, tgt: string): Promise<string> {
+  const input = text.trim();
+  if (!input) return text;
+
   const s = src.slice(0, 2).toLowerCase();
   const t = tgt.slice(0, 2).toLowerCase();
-  if (s === t) return text;
+  if (s === t) return input;
 
   // Fix Chinese code for APIs
   const apiCode: Record<string, string> = { zh: 'zh-CN' };
   const sApi = apiCode[s] ?? s;
   const tApi = apiCode[t] ?? t;
 
-  // 1. MyMemory
-  try {
-    const r = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sApi}|${tApi}`
-    );
-    if (r.ok) {
-      const d = await r.json();
-      if (d?.responseStatus === 200 && d?.responseData?.translatedText) {
-        const out = d.responseData.translatedText as string;
-        if (out && out.toLowerCase() !== text.toLowerCase()) return out;
-      }
-    }
-  } catch {}
+  const normalize = (v: string) =>
+    v
+      .toLowerCase()
+      .replace(/[\s.,!?;:'"“”‘’()\[\]{}\-_\/\\|]+/g, '');
 
-  // 2. Google Translate
-  try {
-    const r = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sApi}&tl=${tApi}&dt=t&q=${encodeURIComponent(text)}`
-    );
-    if (r.ok) {
+  const isDifferent = (out: string) => {
+    const cleanOut = normalize(out);
+    const cleanInput = normalize(input);
+    return Boolean(cleanOut) && cleanOut !== cleanInput;
+  };
+
+  const tryMyMemory = async (): Promise<string | null> => {
+    try {
+      const r = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(input)}&langpair=${sApi}|${tApi}`
+      );
+      if (!r.ok) return null;
+      const d = await r.json();
+      const out = d?.responseData?.translatedText as string | undefined;
+      if (d?.responseStatus === 200 && out && isDifferent(out)) return out;
+    } catch {}
+    return null;
+  };
+
+  const tryGoogle = async (sourceLang: string): Promise<string | null> => {
+    try {
+      const r = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${tApi}&dt=t&q=${encodeURIComponent(input)}`
+      );
+      if (!r.ok) return null;
       const d = await r.json();
       const out: string = (d?.[0] ?? []).map((c: any[]) => c?.[0] ?? '').join('');
-      if (out && out.toLowerCase() !== text.toLowerCase()) return out;
-    }
-  } catch {}
+      if (out && isDifferent(out)) return out;
+    } catch {}
+    return null;
+  };
 
-  return text;
+  // For Chinese output, prioritize Google first (more natural/consistent than MyMemory).
+  if (tApi === 'zh-CN') {
+    const gFirst = await tryGoogle(sApi);
+    if (gFirst) return gFirst;
+  }
+
+  const mm = await tryMyMemory();
+  if (mm) return mm;
+
+  const g = await tryGoogle(sApi);
+  if (g) return g;
+
+  const gAuto = await tryGoogle('auto');
+  if (gAuto) return gAuto;
+
+  return input;
 }
 
 // ── Public helper so Index.tsx can test translation ──────────────────────────
