@@ -5,13 +5,25 @@ function pickVoice(voiceName: string | undefined, lang: string): SpeechSynthesis
   const voices = window.speechSynthesis.getVoices();
   if (!voices?.length) return undefined;
 
+  const langPrefix = lang.slice(0, 2).toLowerCase();
+
+  // Force specific voice for Chinese
+  if (langPrefix === 'zh') {
+    const zhVoice = voices.find((v) =>
+      v.name.includes('普通话') ||
+      v.name.includes('zh-CN') ||
+      v.lang === 'zh-CN'
+    );
+    if (zhVoice) return zhVoice;
+  }
+
+  // Use user-selected voice if set
   if (voiceName) {
     const v = voices.find((x) => x.name === voiceName);
     if (v) return v;
   }
 
-  // Best-effort: match by language prefix.
-  const langPrefix = lang.slice(0, 2).toLowerCase();
+  // Fallback: match by language prefix
   return voices.find((v) => v.lang?.toLowerCase().startsWith(langPrefix));
 }
 
