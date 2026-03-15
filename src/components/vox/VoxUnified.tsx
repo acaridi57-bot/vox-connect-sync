@@ -154,7 +154,7 @@ export const ListeningIndicator = React.forwardRef<HTMLDivElement, { onToggle: (
       </p>
     </div>
   );
-}
+});
 
 /* -------------------------------------------------------
    3️⃣  SETTINGS MODAL — tema verde + Sintesi Vocale
