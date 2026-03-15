@@ -39,10 +39,12 @@ export function speakTextWithSettings(text: string, lang: string, onEnd?: () => 
 
   window.speechSynthesis.cancel();
 
+  const isChinese = lang.slice(0, 2).toLowerCase() === 'zh';
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
-  utterance.rate = typeof speechRate === 'number' ? speechRate : 1;
-  utterance.pitch = typeof speechPitch === 'number' ? speechPitch : 1;
+  utterance.rate = isChinese ? 0.9 : (typeof speechRate === 'number' ? speechRate : 1);
+  utterance.pitch = isChinese ? 0.99 : (typeof speechPitch === 'number' ? speechPitch : 1);
   utterance.volume = typeof volume === 'number' ? Math.min(Math.max(volume / 100, 0), 1) : 1;
 
   const voice = pickVoice(voiceName, lang);
