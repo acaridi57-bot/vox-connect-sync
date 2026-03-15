@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { Mic, Loader2 } from "lucide-react";
-import { useAppStore, LANGUAGES } from "@/store/useAppStore";
+import { useAppStore } from "@/store/useAppStore";
 import {
   Select,
   SelectTrigger,
