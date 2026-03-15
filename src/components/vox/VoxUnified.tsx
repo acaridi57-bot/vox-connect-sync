@@ -93,7 +93,7 @@ export function LanguageSelector() {
 /* -------------------------------------------------------
    2️⃣  LISTENING INDICATOR
 ------------------------------------------------------- */
-export const ListeningIndicator = React.forwardRef<HTMLDivElement, { onToggle: () => void }>(function ListeningIndicator({ onToggle }, ref) {
+export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
   const status = useAppStore((s) => s.status);
   const audioLevel = useAppStore((s) => s.audioLevel);
 
