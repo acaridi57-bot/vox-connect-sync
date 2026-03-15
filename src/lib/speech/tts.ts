@@ -57,7 +57,12 @@ export function speakTextWithSettings(text: string, lang: string, onEnd?: () => 
   utterance.volume = typeof volume === 'number' ? Math.min(Math.max(volume / 100, 0), 1) : 1;
 
   const voice = pickVoice(voiceName, lang);
-  if (voice) utterance.voice = voice;
+  if (voice) {
+    utterance.voice = voice;
+    console.log(`[TTS] Using voice: "${voice.name}" (${voice.lang}) for lang="${lang}"`);
+  } else {
+    console.warn(`[TTS] No voice found for lang="${lang}"`);
+  }
 
   let doneCalled = false;
   const done = () => {
