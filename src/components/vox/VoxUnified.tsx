@@ -34,8 +34,7 @@ export const VoxLogo = () => (
 ------------------------------------------------------- */
 const LANGS = [
   { code: "it-IT", label: "Italiano", flag: "🇮🇹" },
-  { code: "en-US", label: "English", flag: "🇺🇸" },
-  { code: "en-GB", label: "British English", flag: "🇬🇧" },
+  { code: "en-US", label: "English", flag: "🇬🇧" },
   { code: "es-ES", label: "Español", flag: "🇪🇸" },
   { code: "fr-FR", label: "Français", flag: "🇫🇷" },
   { code: "de-DE", label: "Deutsch", flag: "🇩🇪" },
@@ -46,17 +45,15 @@ const LANGS = [
    1️⃣  LANGUAGE SELECTOR
 ------------------------------------------------------- */
 export function LanguageSelector() {
-  const from = useAppStore((s) => s.sourceLangCode);
-  const to = useAppStore((s) => s.targetLangCode);
-  const setFrom = useAppStore((s) => s.setSourceLangCode);
-  const setTo = useAppStore((s) => s.setTargetLangCode);
+  const source = useAppStore((s) => s.sourceLangCode);
+  const target = useAppStore((s) => s.targetLangCode);
+  const setSource = useAppStore((s) => s.setSourceLangCode);
+  const setTarget = useAppStore((s) => s.setTargetLangCode);
   const swap = useAppStore((s) => s.swapLanguages);
-
-  
 
   return (
     <div className="flex items-center gap-3 w-full">
-      <Select value={from} onValueChange={setFrom}>
+      <Select value={source} onValueChange={setSource}>
         <SelectTrigger className="flex-1 h-12 rounded-2xl bg-card border border-border text-foreground font-semibold text-base">
           <SelectValue />
         </SelectTrigger>
@@ -76,7 +73,7 @@ export function LanguageSelector() {
         →
       </button>
 
-      <Select value={to} onValueChange={setTo}>
+      <Select value={target} onValueChange={setTarget}>
         <SelectTrigger className="flex-1 h-12 rounded-2xl bg-card border border-border text-foreground font-semibold text-base">
           <SelectValue />
         </SelectTrigger>
@@ -98,7 +95,7 @@ export function LanguageSelector() {
 export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
   const status = useAppStore((s) => s.status);
   const audioLevel = useAppStore((s) => s.audioLevel);
-  
+
   const isListening = status === "listening";
   const isProcessing = status === "processing";
 
@@ -159,15 +156,26 @@ export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
 }
 
 /* -------------------------------------------------------
-   3️⃣  SETTINGS MODAL
+   3️⃣  SETTINGS MODAL — tema verde + Sintesi Vocale
 ------------------------------------------------------- */
 export function SettingsModal() {
   const isOpen = useAppStore((s) => s.isSettingsOpen);
   const setOpen = useAppStore((s) => s.setSettingsOpen);
+
   const sensitivity = useAppStore((s) => s.sensitivity);
   const setSensitivity = useAppStore((s) => s.setSensitivity);
+
   const volume = useAppStore((s) => s.volume);
   const setVolume = useAppStore((s) => s.setVolume);
+
+  const voiceName = useAppStore((s) => s.voiceName);
+  const setVoiceName = useAppStore((s) => s.setVoiceName);
+
+  const speechRate = useAppStore((s) => s.speechRate);
+  const setSpeechRate = useAppStore((s) => s.setSpeechRate);
+
+  const speechPitch = useAppStore((s) => s.speechPitch);
+  const setSpeechPitch = useAppStore((s) => s.setSpeechPitch);
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
@@ -177,6 +185,7 @@ export function SettingsModal() {
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
+          {/* MICROPHONE SENSITIVITY */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-muted-foreground">Sensibilità Microfono</label>
@@ -190,6 +199,7 @@ export function SettingsModal() {
             />
           </div>
 
+          {/* SPEAKER VOLUME */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-muted-foreground">Volume Riproduzione</label>
@@ -202,6 +212,68 @@ export function SettingsModal() {
               step={1}
             />
           </div>
+
+          {/* VOICE SYNTHESIS */}
+          <div className="space-y-4 border-t border-border pt-4">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Sintesi Vocale</h3>
+              <p className="text-sm text-muted-foreground">Scegli la voce e regola le impostazioni di lettura</p>
+            </div>
+
+            {/* VOICE SELECT */}
+            <div className="flex items-center gap-3">
+              <select
+                className="flex-1 h-11 rounded-2xl bg-card border border-border text-foreground px-3 text-sm"
+                value={voiceName}
+                onChange={(e) => setVoiceName(e.target.value)}
+              >
+                <option value="Alice">Alice</option>
+                <option value="Giulia">Giulia</option>
+                <option value="Luca">Luca</option>
+                <option value="Matteo">Matteo</option>
+              </select>
+              <button
+                className="h-11 px-4 rounded-2xl bg-primary text-primary-foreground font-medium text-sm"
+                onClick={() => {
+                  const u = new SpeechSynthesisUtterance("Prova voce");
+                  u.voice = speechSynthesis.getVoices().find((v) => v.name === voiceName) || null;
+                  u.rate = speechRate;
+                  u.pitch = speechPitch;
+                  speechSynthesis.speak(u);
+                }}
+              >
+                Prova
+              </button>
+            </div>
+
+            {/* SPEED */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-muted-foreground">Velocità — {speechRate.toFixed(2)}×</label>
+              </div>
+              <Slider
+                value={[speechRate]}
+                onValueChange={(v) => setSpeechRate(v[0])}
+                min={0.5}
+                max={1.5}
+                step={0.01}
+              />
+            </div>
+
+            {/* TONE */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-muted-foreground">Tono — {speechPitch.toFixed(2)}</label>
+              </div>
+              <Slider
+                value={[speechPitch]}
+                onValueChange={(v) => setSpeechPitch(v[0])}
+                min={0.5}
+                max={1.5}
+                step={0.01}
+              />
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -209,7 +281,8 @@ export function SettingsModal() {
 }
 
 /* -------------------------------------------------------
-   4️⃣  CONVERSATION VIEW
+   4️⃣  CONVERSATION VIEW — stile WhatsApp/Telegram
+   (mostra originale + traduzione)
 ------------------------------------------------------- */
 export function ConversationView() {
   const messages = useAppStore((s) => s.messages);
@@ -238,7 +311,7 @@ export function ConversationView() {
   );
 }
 
-function MessageBubble({ msg }: { msg: { id: string; text: string; translatedText: string } }) {
+function MessageBubble({ msg }: { msg: { id: string; text: string; translatedText: string; sourceLang: string; targetLang: string } }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
