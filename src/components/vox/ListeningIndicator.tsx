@@ -1,4 +1,4 @@
-import { Mic, Volume2, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -11,7 +11,6 @@ export function ListeningIndicator({ onToggle }: Props) {
   const audioLevel = useAppStore((s) => s.audioLevel);
   const isActive = status !== 'idle';
   const isListening = status === 'listening';
-  const isSpeaking = status === 'speaking';
   const isProcessing = status === 'processing';
 
   return (
@@ -23,17 +22,17 @@ export function ListeningIndicator({ onToggle }: Props) {
             <>
               <motion.div
                 key="ring1"
-                initial={{ scale: 1, opacity: 0.4 }}
-                animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
+                initial={{ scale: 1, opacity: 0.3 }}
+                animate={{ scale: [1, 1.6], opacity: [0.3, 0] }}
                 transition={{ repeat: Infinity, duration: 1.8, ease: 'easeOut' }}
-                className="absolute inset-0 rounded-full bg-secondary"
+                className="absolute inset-0 rounded-full bg-[hsl(var(--vox-green))]"
               />
               <motion.div
                 key="ring2"
-                initial={{ scale: 1, opacity: 0.3 }}
-                animate={{ scale: [1, 1.4], opacity: [0.3, 0] }}
+                initial={{ scale: 1, opacity: 0.2 }}
+                animate={{ scale: [1, 1.4], opacity: [0.2, 0] }}
                 transition={{ repeat: Infinity, duration: 1.8, ease: 'easeOut', delay: 0.3 }}
-                className="absolute inset-0 rounded-full bg-secondary"
+                className="absolute inset-0 rounded-full bg-[hsl(var(--vox-green))]"
               />
             </>
           )}
@@ -42,36 +41,33 @@ export function ListeningIndicator({ onToggle }: Props) {
         {/* Audio level glow */}
         {isListening && audioLevel > 0.1 && (
           <motion.div
-            animate={{ scale: 1 + audioLevel * 0.3, opacity: audioLevel * 0.6 }}
+            animate={{ scale: 1 + audioLevel * 0.3, opacity: audioLevel * 0.5 }}
             transition={{ duration: 0.1 }}
-            className="absolute inset-[-8px] rounded-full bg-secondary/30 blur-md"
+            className="absolute inset-[-8px] rounded-full bg-[hsl(var(--vox-green)/0.3)] blur-md"
           />
         )}
 
         {/* Main button */}
         <motion.button
           whileTap={{ scale: 0.92 }}
+          whileHover={{ scale: 1.05 }}
           onClick={onToggle}
-          className={`relative w-20 h-20 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
-            isActive
-              ? isSpeaking
-                ? 'bg-secondary vox-glow-active'
-                : 'bg-foreground vox-glow'
-              : 'vox-gradient vox-glow'
-          }`}
+          className="relative w-[120px] h-[120px] rounded-full flex items-center justify-center transition-all duration-200"
+          style={{
+            background: 'hsl(145 77% 46%)',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          }}
         >
           {isProcessing ? (
-            <Loader2 size={32} className="text-background animate-spin" />
-          ) : isSpeaking ? (
-            <Volume2 size={32} className="text-background" />
+            <Loader2 size={40} className="text-white animate-spin" />
           ) : (
-            <Mic size={32} className={isActive ? 'text-background' : 'text-foreground'} />
+            <img src="/assets/microphone.png" alt="Microphone" width={50} height={50} className="object-contain" />
           )}
         </motion.button>
       </div>
 
-      <p className="mt-4 text-sm font-medium text-muted-foreground uppercase tracking-[0.2em]">
-        {status === 'idle' && 'Tap to Speak'}
+      <p className="mt-5 text-base text-[hsl(var(--muted-foreground))] max-w-xs text-center leading-relaxed">
+        {status === 'idle' && 'Speak naturally — VoxTranslate listens and translates automatically'}
         {status === 'listening' && 'Listening...'}
         {status === 'processing' && 'Translating...'}
         {status === 'speaking' && 'Speaking...'}

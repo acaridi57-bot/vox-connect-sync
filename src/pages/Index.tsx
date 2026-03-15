@@ -12,36 +12,34 @@ import logo from '@/assets/logo.png';
 export default function Index() {
   const status = useAppStore((s) => s.status);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
-  const getSelectedPair = useAppStore((s) => s.getSelectedPair);
+  const sourceLangCode = useAppStore((s) => s.sourceLangCode);
+  const targetLangCode = useAppStore((s) => s.targetLangCode);
   const { startMic, stopMic, pauseMic, resumeMic } = useMicrophone();
   const { startRecognition, stopRecognition } = useSpeechRecognition();
 
   const handleToggle = useCallback(() => {
     if (status === 'idle') {
       startMic();
-      const pair = getSelectedPair();
-      startRecognition(pair, () => {
-        resumeMic();
-      });
+      startRecognition(sourceLangCode, targetLangCode, pauseMic, resumeMic);
     } else {
       stopMic();
       stopRecognition();
     }
-  }, [status, startMic, stopMic, startRecognition, stopRecognition, getSelectedPair, resumeMic]);
+  }, [status, startMic, stopMic, startRecognition, stopRecognition, sourceLangCode, targetLangCode, pauseMic, resumeMic]);
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-[hsl(var(--background))] overflow-hidden">
       {/* Header */}
-      <header className="px-5 pt-12 pb-3 flex items-center justify-between safe-top bg-gradient-to-b from-background via-background to-transparent z-10">
+      <header className="px-5 pt-12 pb-3 flex items-center justify-between safe-top z-10">
         <div className="flex items-center gap-3">
           <img src={logo} alt="VoxTranslate" className="w-9 h-9 rounded-xl" />
-          <h1 className="text-xl font-bold tracking-tight vox-gradient-text">VoxTranslate</h1>
+          <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">VoxTranslate</h1>
         </div>
         <button
           onClick={() => setSettingsOpen(true)}
-          className="p-2.5 rounded-full bg-muted/50 transition-colors active:bg-muted"
+          className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
         >
-          <Settings size={20} className="text-muted-foreground" />
+          <Settings size={20} className="text-[hsl(var(--muted-foreground))]" />
         </button>
       </header>
 
@@ -54,7 +52,7 @@ export default function Index() {
       <ConversationView />
 
       {/* Controls */}
-      <div className="px-8 pt-4 pb-8 safe-bottom flex flex-col items-center bg-gradient-to-t from-background via-background to-transparent">
+      <div className="px-8 pt-4 pb-8 safe-bottom flex flex-col items-center">
         <ListeningIndicator onToggle={handleToggle} />
       </div>
 
