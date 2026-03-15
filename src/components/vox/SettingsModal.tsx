@@ -46,7 +46,6 @@ export function SettingsModal() {
     window.speechSynthesis.onvoiceschanged = load;
 
     return () => {
-      // @ts-expect-error - browser API
       window.speechSynthesis.onvoiceschanged = null;
     };
   }, [voiceName, setVoiceName]);
