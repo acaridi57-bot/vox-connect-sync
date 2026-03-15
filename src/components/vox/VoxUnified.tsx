@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Mic, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import {
