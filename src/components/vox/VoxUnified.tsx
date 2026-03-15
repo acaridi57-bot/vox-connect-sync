@@ -295,7 +295,7 @@ export const SettingsModal = React.forwardRef<HTMLDivElement, {}>(function Setti
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 /* -------------------------------------------------------
    4️⃣  CONVERSATION VIEW — stile WhatsApp/Telegram
