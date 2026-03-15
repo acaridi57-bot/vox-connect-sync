@@ -9,10 +9,15 @@ async function doTranslate(text: string, src: string, tgt: string): Promise<stri
   const t = tgt.slice(0, 2).toLowerCase();
   if (s === t) return text;
 
-  // 1. MyMemory — free, CORS-enabled
+  // Fix Chinese code for APIs
+  const apiCode: Record<string, string> = { zh: 'zh-CN' };
+  const sApi = apiCode[s] ?? s;
+  const tApi = apiCode[t] ?? t;
+
+  // 1. MyMemory
   try {
     const r = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${s}|${t}`
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sApi}|${tApi}`
     );
     if (r.ok) {
       const d = await r.json();
@@ -21,33 +26,20 @@ async function doTranslate(text: string, src: string, tgt: string): Promise<stri
         if (out && out.toLowerCase() !== text.toLowerCase()) return out;
       }
     }
-  } catch { /* try next */ }
+  } catch {}
 
-  // 2. Google Translate (unofficial gtx client — no key needed)
+  // 2. Google Translate
   try {
     const r = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${s}&tl=${t}&dt=t&q=${encodeURIComponent(text)}`
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sApi}&tl=${tApi}&dt=t&q=${encodeURIComponent(text)}`
     );
     if (r.ok) {
       const d = await r.json();
       const out: string = (d?.[0] ?? []).map((c: any[]) => c?.[0] ?? '').join('');
       if (out && out.toLowerCase() !== text.toLowerCase()) return out;
     }
-  } catch { /* try next */ }
+  } catch {}
 
-  // 3. Lingva (Google proxy, open source)
-  try {
-    const r = await fetch(
-      `https://lingva.ml/api/v1/${s}/${t}/${encodeURIComponent(text)}`
-    );
-    if (r.ok) {
-      const d = await r.json();
-      const out = d?.translation as string;
-      if (out && out.toLowerCase() !== text.toLowerCase()) return out;
-    }
-  } catch { /* give up */ }
-
-  console.warn('[VoxTranslate] All APIs failed for:', text);
   return text;
 }
 
