@@ -112,5 +112,5 @@ export function simpleTranslate(text: string, sourceCode: string, targetCode: st
     const lower = text.toLowerCase().trim();
     if (dict[lower]) return dict[lower];
   }
-  return `[${tgtShort.toUpperCase()}] ${text}`;
+  return text;
 }
