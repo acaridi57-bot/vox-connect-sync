@@ -154,7 +154,7 @@ export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
       </p>
     </div>
   );
-});
+}
 
 /* -------------------------------------------------------
    3️⃣  SETTINGS MODAL — tema verde + Sintesi Vocale
