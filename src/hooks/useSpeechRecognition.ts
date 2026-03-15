@@ -45,7 +45,10 @@ async function doTranslate(text: string, src: string, tgt: string): Promise<stri
 
 // ── Public helper so Index.tsx can test translation ──────────────────────────
 export async function testTranslation(): Promise<string> {
-  return doTranslate('Ciao come stai', 'it', 'en');
+  const { sourceLangCode, targetLangCode } = useAppStore.getState();
+  const result = await doTranslate('Ciao come stai', sourceLangCode, targetLangCode);
+  const zhTest = await doTranslate('你好吗', 'zh', 'it');
+  return `IT→${targetLangCode.slice(0,2).toUpperCase()}: "${result}" | ZH→IT: "${zhTest}"`;
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
