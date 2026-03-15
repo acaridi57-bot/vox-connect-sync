@@ -3,11 +3,13 @@ import { Settings, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useMicrophone } from '@/hooks/useMicrophone';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { LanguageSelector } from '@/components/vox/LanguageSelector';
-import { ConversationView } from '@/components/vox/ConversationView';
-import { ListeningIndicator } from '@/components/vox/ListeningIndicator';
-import { SettingsModal } from '@/components/vox/SettingsModal';
-import logo from '@/assets/logo.png';
+import {
+  LanguageSelector,
+  ListeningIndicator,
+  SettingsModal,
+  ConversationView,
+  VoxLogo,
+} from '@/components/vox/VoxUnified';
 
 export default function Index() {
   const status = useAppStore((s) => s.status);
@@ -38,8 +40,8 @@ export default function Index() {
       {/* Header */}
       <header className="px-5 pt-12 pb-3 flex items-center justify-between safe-top z-10">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="VoxTranslate" className="w-9 h-9 rounded-xl" />
-          <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">VoxTranslate</h1>
+          <VoxLogo />
+          <h1 className="text-xl font-bold tracking-tight text-foreground">VoxTranslate</h1>
         </div>
 
         <div className="flex items-center gap-2">

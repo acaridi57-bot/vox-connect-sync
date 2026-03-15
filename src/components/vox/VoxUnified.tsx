@@ -1,0 +1,257 @@
+import React, { useRef, useEffect } from "react";
+import { Mic, Loader2 } from "lucide-react";
+import { useAppStore } from "@/store/useAppStore";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AnimatePresence, motion } from "framer-motion";
+
+/* -------------------------------------------------------
+   LOGO SVG VERDE (inline)
+------------------------------------------------------- */
+export const VoxLogo = () => (
+  <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="36" height="36" rx="10" fill="hsl(var(--vox-green))" />
+    <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="14" fontWeight="700" fontFamily="Inter, sans-serif">
+      VT
+    </text>
+  </svg>
+);
+
+/* -------------------------------------------------------
+   LANGS con bandierine
+------------------------------------------------------- */
+const LANGS = [
+  { code: "it-IT", label: "Italiano", flag: "🇮🇹" },
+  { code: "en-US", label: "English", flag: "🇺🇸" },
+  { code: "en-GB", label: "British English", flag: "🇬🇧" },
+  { code: "es-ES", label: "Español", flag: "🇪🇸" },
+  { code: "fr-FR", label: "Français", flag: "🇫🇷" },
+  { code: "de-DE", label: "Deutsch", flag: "🇩🇪" },
+  { code: "zh-CN", label: "中文", flag: "🇨🇳" },
+];
+
+/* -------------------------------------------------------
+   1️⃣  LANGUAGE SELECTOR
+------------------------------------------------------- */
+export function LanguageSelector() {
+  const from = useAppStore((s) => s.sourceLangCode);
+  const to = useAppStore((s) => s.targetLangCode);
+  const setFrom = useAppStore((s) => s.setSourceLangCode);
+  const setTo = useAppStore((s) => s.setTargetLangCode);
+  const swap = useAppStore((s) => s.swapLanguages);
+
+  
+
+  return (
+    <div className="flex items-center gap-3 w-full">
+      <Select value={from} onValueChange={setFrom}>
+        <SelectTrigger className="flex-1 h-12 rounded-2xl bg-card border border-border text-foreground font-semibold text-base">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {LANGS.map((l) => (
+            <SelectItem key={l.code} value={l.code}>
+              {l.flag} {l.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <button
+        onClick={swap}
+        className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground shrink-0"
+      >
+        →
+      </button>
+
+      <Select value={to} onValueChange={setTo}>
+        <SelectTrigger className="flex-1 h-12 rounded-2xl bg-card border border-border text-foreground font-semibold text-base">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {LANGS.map((l) => (
+            <SelectItem key={l.code} value={l.code}>
+              {l.flag} {l.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------
+   2️⃣  LISTENING INDICATOR
+------------------------------------------------------- */
+export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
+  const status = useAppStore((s) => s.status);
+  const audioLevel = useAppStore((s) => s.audioLevel);
+  
+  const isListening = status === "listening";
+  const isProcessing = status === "processing";
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative">
+        <AnimatePresence>
+          {isListening && (
+            <>
+              <motion.div
+                key="ring1"
+                initial={{ scale: 1, opacity: 0.3 }}
+                animate={{ scale: [1, 1.6], opacity: [0.3, 0] }}
+                transition={{ repeat: Infinity, duration: 1.8, ease: "easeOut" }}
+                className="absolute inset-0 rounded-full bg-primary"
+              />
+              <motion.div
+                key="ring2"
+                initial={{ scale: 1, opacity: 0.2 }}
+                animate={{ scale: [1, 1.4], opacity: [0.2, 0] }}
+                transition={{ repeat: Infinity, duration: 1.8, ease: "easeOut", delay: 0.3 }}
+                className="absolute inset-0 rounded-full bg-primary"
+              />
+            </>
+          )}
+        </AnimatePresence>
+
+        {isListening && audioLevel > 0.1 && (
+          <motion.div
+            animate={{ scale: 1 + audioLevel * 0.3, opacity: audioLevel * 0.5 }}
+            transition={{ duration: 0.1 }}
+            className="absolute inset-[-8px] rounded-full bg-primary/30 blur-md"
+          />
+        )}
+
+        <motion.button
+          whileTap={{ scale: 0.92 }}
+          whileHover={{ scale: 1.05 }}
+          onClick={onToggle}
+          className="relative w-[120px] h-[120px] rounded-full flex items-center justify-center bg-primary shadow-lg transition-all duration-200"
+        >
+          {isProcessing ? (
+            <Loader2 size={40} className="text-primary-foreground animate-spin" />
+          ) : (
+            <Mic size={50} className="text-primary-foreground" strokeWidth={2} />
+          )}
+        </motion.button>
+      </div>
+
+      <p className="mt-5 text-base text-muted-foreground max-w-xs text-center leading-relaxed">
+        {status === "idle" && "Speak naturally — VoxTranslate listens and translates automatically"}
+        {status === "listening" && "Listening..."}
+        {status === "processing" && "Translating..."}
+        {status === "speaking" && "Speaking..."}
+      </p>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------
+   3️⃣  SETTINGS MODAL
+------------------------------------------------------- */
+export function SettingsModal() {
+  const isOpen = useAppStore((s) => s.isSettingsOpen);
+  const setOpen = useAppStore((s) => s.setSettingsOpen);
+  const sensitivity = useAppStore((s) => s.sensitivity);
+  const setSensitivity = useAppStore((s) => s.setSensitivity);
+  const volume = useAppStore((s) => s.volume);
+  const setVolume = useAppStore((s) => s.setVolume);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setOpen}>
+      <DialogContent className="rounded-3xl border-border bg-card">
+        <DialogHeader>
+          <DialogTitle className="text-foreground text-xl font-bold">Impostazioni</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 pt-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-muted-foreground">Sensibilità Microfono</label>
+              <span className="text-sm text-muted-foreground">{sensitivity}%</span>
+            </div>
+            <Slider
+              value={[sensitivity]}
+              onValueChange={(v) => setSensitivity(v[0])}
+              max={100}
+              step={1}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-muted-foreground">Volume Riproduzione</label>
+              <span className="text-sm text-muted-foreground">{volume}%</span>
+            </div>
+            <Slider
+              value={[volume]}
+              onValueChange={(v) => setVolume(v[0])}
+              max={100}
+              step={1}
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* -------------------------------------------------------
+   4️⃣  CONVERSATION VIEW
+------------------------------------------------------- */
+export function ConversationView() {
+  const messages = useAppStore((s) => s.messages);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  return (
+    <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+      {messages.length === 0 && (
+        <div className="flex flex-col items-center justify-center h-full text-center px-8">
+          <p className="text-lg font-medium text-muted-foreground">Tap the microphone to start translating</p>
+          <p className="text-sm text-muted-foreground mt-2 opacity-60">
+            Speak naturally — VoxTranslate will detect the language and translate in real-time
+          </p>
+        </div>
+      )}
+      <AnimatePresence initial={false}>
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} msg={msg} />
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MessageBubble({ msg }: { msg: { id: string; text: string; translatedText: string } }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="space-y-1"
+    >
+      <div className="bg-card border border-border rounded-2xl px-4 py-3 max-w-[85%] shadow-sm">
+        <p className="text-foreground text-sm">{msg.text}</p>
+        {msg.translatedText && (
+          <p className="text-primary text-sm font-medium mt-1">{msg.translatedText}</p>
+        )}
+      </div>
+    </motion.div>
+  );
+}
