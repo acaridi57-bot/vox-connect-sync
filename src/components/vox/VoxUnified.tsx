@@ -101,7 +101,7 @@ export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
   const isProcessing = status === "processing";
 
   return (
-    <div ref={ref} className="flex flex-col items-center">
+    <div className="flex flex-col items-center">
       <div className="relative">
         <AnimatePresence>
           {isListening && (
