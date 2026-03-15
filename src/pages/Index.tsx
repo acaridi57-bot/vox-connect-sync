@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { Settings, Trash2 } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Settings, Trash2, MicOff, Mic, LogOut } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { useMicrophone } from "@/hooks/useMicrophone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
@@ -16,6 +16,7 @@ export default function Index() {
   const status = useAppStore((s) => s.status);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const clearMessages = useAppStore((s) => s.clearMessages);
+  const [isMuted, setIsMuted] = useState(false);
 
   const { startMic, stopMic, pauseMic, resumeMic } = useMicrophone();
   const { startRecognition, stopRecognition } = useSpeechRecognition();
@@ -39,6 +40,25 @@ export default function Index() {
     clearMessages();
   }, [clearMessages]);
 
+  const handleMuteToggle = useCallback(() => {
+    if (isMuted) {
+      resumeMic();
+      setIsMuted(false);
+    } else {
+      pauseMic();
+      setIsMuted(true);
+    }
+  }, [isMuted, pauseMic, resumeMic]);
+
+  const handleLogout = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    stopRecognition();
+    stopMic();
+    clearMessages();
+    useAppStore.getState().setStatus("idle");
+    window.location.reload();
+  }, [stopRecognition, stopMic, clearMessages]);
+
   return (
     <div className="flex flex-col h-[100dvh] bg-[hsl(var(--background))] overflow-hidden">
       {/* HEADER */}
@@ -49,6 +69,22 @@ export default function Index() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleMuteToggle}
+            className={`p-2.5 rounded-full border transition-colors ${
+              isMuted
+                ? "bg-destructive/10 border-destructive/40 active:bg-destructive/20"
+                : "bg-white/80 border-[hsl(var(--border))] active:bg-[hsl(var(--muted))]"
+            }`}
+            aria-label={isMuted ? "Riattiva microfono" : "Silenzia microfono"}
+            title={isMuted ? "Riattiva microfono" : "Silenzia microfono"}
+          >
+            {isMuted ? (
+              <MicOff size={20} className="text-destructive" />
+            ) : (
+              <Mic size={20} className="text-[hsl(var(--muted-foreground))]" />
+            )}
+          </button>
           <button
             onClick={handleClear}
             className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
@@ -63,6 +99,14 @@ export default function Index() {
             aria-label="Impostazioni"
           >
             <Settings size={20} className="text-[hsl(var(--muted-foreground))]" />
+          </button>
+          <button
+            onClick={handleLogout}
+            className="p-2.5 rounded-full bg-white/80 border border-destructive/40 active:bg-destructive/10 transition"
+            aria-label="Esci dall'app"
+            title="Esci dall'app"
+          >
+            <LogOut size={20} className="text-destructive" />
           </button>
         </div>
       </header>
