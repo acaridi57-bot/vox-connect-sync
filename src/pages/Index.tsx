@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useMicrophone } from '@/hooks/useMicrophone';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -12,6 +12,7 @@ import logo from '@/assets/logo.png';
 export default function Index() {
   const status = useAppStore((s) => s.status);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
+  const clearMessages = useAppStore((s) => s.clearMessages);
   const { startMic, stopMic, pauseMic, resumeMic } = useMicrophone();
   const { startRecognition, stopRecognition } = useSpeechRecognition();
 
@@ -20,11 +21,17 @@ export default function Index() {
       startMic();
       startRecognition(pauseMic, resumeMic);
     } else {
-      stopMic();
       stopRecognition();
+      stopMic();
       window.speechSynthesis?.cancel();
     }
   }, [status, startMic, stopMic, startRecognition, stopRecognition, pauseMic, resumeMic]);
+
+  const handleClear = useCallback(() => {
+    const ok = window.confirm('Vuoi cancellare tutta la cronologia della conversazione?');
+    if (!ok) return;
+    clearMessages();
+  }, [clearMessages]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[hsl(var(--background))] overflow-hidden">
@@ -34,12 +41,25 @@ export default function Index() {
           <img src={logo} alt="VoxTranslate" className="w-9 h-9 rounded-xl" />
           <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">VoxTranslate</h1>
         </div>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
-        >
-          <Settings size={20} className="text-[hsl(var(--muted-foreground))]" />
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleClear}
+            className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
+            aria-label="Cancella cronologia"
+            title="Cancella cronologia"
+          >
+            <Trash2 size={20} className="text-[hsl(var(--muted-foreground))]" />
+          </button>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
+            aria-label="Impostazioni"
+            title="Impostazioni"
+          >
+            <Settings size={20} className="text-[hsl(var(--muted-foreground))]" />
+          </button>
+        </div>
       </header>
 
       {/* Language Selector */}
