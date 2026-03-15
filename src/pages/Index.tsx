@@ -41,12 +41,25 @@ export default function Index() {
           <img src={logo} alt="VoxTranslate" className="w-9 h-9 rounded-xl" />
           <h1 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">VoxTranslate</h1>
         </div>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
-        >
-          <Settings size={20} className="text-[hsl(var(--muted-foreground))]" />
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleClear}
+            className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
+            aria-label="Cancella cronologia"
+            title="Cancella cronologia"
+          >
+            <Trash2 size={20} className="text-[hsl(var(--muted-foreground))]" />
+          </button>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors active:bg-[hsl(var(--muted))]"
+            aria-label="Impostazioni"
+            title="Impostazioni"
+          >
+            <Settings size={20} className="text-[hsl(var(--muted-foreground))]" />
+          </button>
+        </div>
       </header>
 
       {/* Language Selector */}
