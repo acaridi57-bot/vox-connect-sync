@@ -61,7 +61,7 @@ export function ListeningIndicator({ onToggle }: Props) {
           {isProcessing ? (
             <Loader2 size={40} className="text-white animate-spin" />
           ) : (
-            <img src="/assets/microphone.png" alt="Microphone" width={50} height={50} className="object-contain" />
+            <Mic size={50} className="text-white" strokeWidth={2} />
           )}
         </motion.button>
       </div>
