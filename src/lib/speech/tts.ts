@@ -10,7 +10,7 @@ function pickVoice(voiceName: string | undefined, lang: string): SpeechSynthesis
   // Force Google Mandarin (Mainland China) voice for Chinese
   if (langPrefix === 'zh') {
     const zhVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith('zh'));
-    
+
     // Priority: Google 普通话（中国大陆） — female Google Mandarin voice
     const googleZh = zhVoices.find((v) => /google.*普通话/i.test(v.name));
     if (googleZh) return googleZh;
@@ -35,11 +35,14 @@ function pickVoice(voiceName: string | undefined, lang: string): SpeechSynthesis
 
 export function speakTextWithSettings(text: string, lang: string, onEnd?: () => void) {
   if (!window.speechSynthesis) {
+    console.warn('[TTS] speechSynthesis not available');
     onEnd?.();
     return;
   }
 
   const { voiceName, speechRate, speechPitch, volume } = useAppStore.getState();
+
+  console.log(`[TTS] Speaking: "${text.slice(0, 60)}" lang=${lang} vol=${volume} rate=${speechRate} pitch=${speechPitch}`);
 
   window.speechSynthesis.cancel();
 
@@ -54,9 +57,9 @@ export function speakTextWithSettings(text: string, lang: string, onEnd?: () => 
   const voice = pickVoice(voiceName, lang);
   if (voice) {
     utterance.voice = voice;
-    console.log(`[TTS] Using voice: "${voice.name}" (${voice.lang}) for lang="${lang}"`);
+    console.log(`[TTS] Voice: "${voice.name}" (${voice.lang})`);
   } else {
-    console.warn(`[TTS] No voice found for lang="${lang}"`);
+    console.warn(`[TTS] No voice found for lang="${lang}", using browser default`);
   }
 
   let doneCalled = false;
@@ -66,17 +69,35 @@ export function speakTextWithSettings(text: string, lang: string, onEnd?: () => 
     onEnd?.();
   };
 
-  // Fail-safe so UI never stays “stuck” if the browser doesn't fire onend.
   const failSafe = window.setTimeout(done, 15000);
 
   utterance.onend = () => {
+    console.log('[TTS] onend fired');
     window.clearTimeout(failSafe);
     done();
   };
-  utterance.onerror = () => {
+
+  utterance.onerror = (e) => {
+    console.error('[TTS] onerror:', e);
     window.clearTimeout(failSafe);
     done();
   };
+
+  // Chrome bug workaround: voices may not be loaded on first call
+  const allVoices = window.speechSynthesis.getVoices();
+  if (!allVoices.length) {
+    console.log('[TTS] Voices not loaded yet, waiting for voiceschanged...');
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      const v2 = pickVoice(voiceName, lang);
+      if (v2) {
+        utterance.voice = v2;
+        console.log(`[TTS] Late voice loaded: "${v2.name}"`);
+      }
+      window.speechSynthesis.speak(utterance);
+    };
+    return;
+  }
 
   window.speechSynthesis.speak(utterance);
 }
