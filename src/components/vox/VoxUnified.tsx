@@ -101,7 +101,7 @@ export const ListeningIndicator = React.forwardRef<HTMLDivElement, { onToggle: (
   const isProcessing = status === "processing";
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={ref} className="flex flex-col items-center">
       <div className="relative">
         <AnimatePresence>
           {isListening && (
