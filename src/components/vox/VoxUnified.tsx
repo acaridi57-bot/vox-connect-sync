@@ -39,6 +39,7 @@ const LANGS = [
   { code: "fr-FR", label: "Français", flag: "🇫🇷" },
   { code: "de-DE", label: "Deutsch", flag: "🇩🇪" },
   { code: "zh-CN", label: "中文", flag: "🇨🇳" },
+  { code: "sq-AL", label: "Shqip", flag: "🇦🇱" },
 ];
 
 /* -------------------------------------------------------
