@@ -107,7 +107,7 @@ export function useSpeechRecognition() {
       recognitionRef.current = recognition;
 
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
       const syncLang = () => {
