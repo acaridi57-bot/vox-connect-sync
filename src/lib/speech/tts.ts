@@ -9,6 +9,8 @@ function pickVoice(voiceName: string | undefined, lang: string): SpeechSynthesis
 
   // Force specific voice for Chinese
   if (langPrefix === 'zh') {
+    const googleZh = voices.find((v) => v.name === 'Google 普通话（中国大陆）');
+    if (googleZh) return googleZh;
     const zhVoice = voices.find((v) =>
       v.name.includes('普通话') ||
       v.name.includes('zh-CN') ||
