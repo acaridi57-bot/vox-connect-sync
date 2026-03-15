@@ -16,6 +16,7 @@ export default function Index() {
   const status = useAppStore((s) => s.status);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const clearMessages = useAppStore((s) => s.clearMessages);
+  const [isMuted, setIsMuted] = useState(false);
 
   const { startMic, stopMic, pauseMic, resumeMic } = useMicrophone();
   const { startRecognition, stopRecognition } = useSpeechRecognition();
@@ -38,6 +39,25 @@ export default function Index() {
     if (!ok) return;
     clearMessages();
   }, [clearMessages]);
+
+  const handleMuteToggle = useCallback(() => {
+    if (isMuted) {
+      resumeMic();
+      setIsMuted(false);
+    } else {
+      pauseMic();
+      setIsMuted(true);
+    }
+  }, [isMuted, pauseMic, resumeMic]);
+
+  const handleLogout = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    stopRecognition();
+    stopMic();
+    clearMessages();
+    useAppStore.getState().setStatus("idle");
+    window.location.reload();
+  }, [stopRecognition, stopMic, clearMessages]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[hsl(var(--background))] overflow-hidden">
