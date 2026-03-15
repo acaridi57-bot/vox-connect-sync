@@ -9,26 +9,22 @@ export function ChatBubble({ message }: Props) {
       initial={{ opacity: 0, y: 12, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-      className="space-y-2"
+      className="space-y-3"
     >
       {/* Original */}
-      <div className="flex justify-end">
-        <div className="max-w-[85%] px-4 py-3 rounded-[20px] rounded-tr-md bg-vox-bubble-user shadow-[var(--vox-shadow-bubble)]">
-          <p className="text-[17px] leading-relaxed text-foreground">{message.text}</p>
-          <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mt-1 block">
-            {message.sourceLang}
-          </span>
-        </div>
+      <div className="bg-[hsl(var(--card))] rounded-2xl p-5 max-w-[500px] mx-auto"
+        style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+      >
+        <p className="text-sm text-[hsl(var(--muted-foreground))] mb-2">{message.sourceLang}</p>
+        <p className="text-lg font-medium text-[hsl(var(--foreground))]">{message.text}</p>
       </div>
 
       {/* Translation */}
-      <div className="flex justify-start">
-        <div className="max-w-[85%] px-4 py-3 rounded-[20px] rounded-tl-md bg-vox-primary/15 border border-primary/10">
-          <p className="text-[17px] leading-relaxed text-foreground">{message.translatedText}</p>
-          <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mt-1 block">
-            {message.targetLang}
-          </span>
-        </div>
+      <div className="bg-[hsl(var(--card))] rounded-2xl p-5 max-w-[500px] mx-auto"
+        style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+      >
+        <p className="text-sm text-[hsl(var(--muted-foreground))] mb-2">{message.targetLang}</p>
+        <p className="text-lg font-medium text-[hsl(var(--foreground))]">{message.translatedText}</p>
       </div>
     </motion.div>
   );

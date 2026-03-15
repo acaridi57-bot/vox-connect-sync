@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
-import { useAppStore, type LanguagePair } from '@/store/useAppStore';
+import { useAppStore } from '@/store/useAppStore';
 
-// Simple translation dictionary for demo (Web Speech API handles recognition)
+// Simple translation dictionary for demo
 const TRANSLATIONS: Record<string, Record<string, string>> = {
   'it-en': {
     'buongiorno': 'good morning',
@@ -37,15 +37,39 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
   },
 };
 
-function simpleTranslate(text: string, sourceLang: string, targetLang: string): string {
-  const key = `${sourceLang.slice(0, 2)}-${targetLang.slice(0, 2)}`;
+const LANG_PATTERNS: Record<string, RegExp> = {
+  'it': /\b(il|la|lo|le|gli|un|una|uno|di|da|in|con|su|per|che|non|è|sono|hai|ho|vorrei|dove|quanto|come|buon|ciao|grazie|favore|scusi)\b/i,
+  'es': /\b(el|la|los|las|un|una|de|en|con|por|que|no|es|son|tiene|hola|gracias|por favor|donde|cuanto)\b/i,
+  'fr': /\b(le|la|les|un|une|de|du|en|dans|avec|pour|que|ne|est|sont|bonjour|merci|s'il vous plaît|où|combien)\b/i,
+  'de': /\b(der|die|das|ein|eine|von|in|mit|für|dass|nicht|ist|sind|hat|hallo|danke|bitte|wo|wie viel)\b/i,
+  'zh': /[\u4e00-\u9fff]/,
+  'en': /\b(the|a|an|is|are|was|were|have|has|do|does|not|and|or|but|in|on|at|to|for|of|with|hello|thank|please|where|how)\b/i,
+};
+
+function detectSpokenLanguage(text: string): string | null {
+  let bestMatch: string | null = null;
+  let bestScore = 0;
+  for (const [code, pattern] of Object.entries(LANG_PATTERNS)) {
+    const matches = text.match(new RegExp(pattern, 'gi'));
+    const score = matches ? matches.length : 0;
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = code;
+    }
+  }
+  return bestMatch;
+}
+
+function simpleTranslate(text: string, sourceCode: string, targetCode: string): string {
+  const srcShort = sourceCode.slice(0, 2);
+  const tgtShort = targetCode.slice(0, 2);
+  const key = `${srcShort}-${tgtShort}`;
   const dict = TRANSLATIONS[key];
   if (dict) {
     const lower = text.toLowerCase().trim();
     if (dict[lower]) return dict[lower];
   }
-  // Fallback: return with a marker
-  return `[${targetLang.slice(0, 2).toUpperCase()}] ${text}`;
+  return `[${tgtShort.toUpperCase()}] ${text}`;
 }
 
 export function useSpeechRecognition() {
@@ -53,7 +77,12 @@ export function useSpeechRecognition() {
   const addMessage = useAppStore((s) => s.addMessage);
   const setStatus = useAppStore((s) => s.setStatus);
 
-  const startRecognition = useCallback((pair: LanguagePair, onSpeechEnd?: () => void) => {
+  const startRecognition = useCallback((
+    sourceLangCode: string,
+    targetLangCode: string,
+    onPauseMic: () => void,
+    onResumeMic: () => void,
+  ) => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.warn('SpeechRecognition not available');
@@ -63,12 +92,7 @@ export function useSpeechRecognition() {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = pair.langA; // Start with langA, will also detect langB
-
-    // Try to enable multi-language
-    try {
-      recognition.lang = pair.langA;
-    } catch {}
+    recognition.lang = sourceLangCode;
 
     recognition.onresult = (event: any) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -78,25 +102,36 @@ export function useSpeechRecognition() {
 
           setStatus('processing');
 
-          // Simple language detection: check if it matches langA patterns
-          const isLangA = detectLanguage(transcript, pair);
-          const sourceLang = isLangA ? pair.langA : pair.langB;
-          const targetLang = isLangA ? pair.langB : pair.langA;
-          const translated = simpleTranslate(transcript, sourceLang, targetLang);
+          // Detect spoken language and determine direction
+          const srcShort = sourceLangCode.slice(0, 2);
+          const tgtShort = targetLangCode.slice(0, 2);
+          const detected = detectSpokenLanguage(transcript);
+
+          let actualSource = sourceLangCode;
+          let actualTarget = targetLangCode;
+
+          if (detected === tgtShort) {
+            // Speaker is using the target language, flip direction
+            actualSource = targetLangCode;
+            actualTarget = sourceLangCode;
+          }
+          // else: default source → target
+
+          const translated = simpleTranslate(transcript, actualSource, actualTarget);
 
           addMessage({
             id: Date.now().toString() + Math.random().toString(36).slice(2),
             text: transcript,
             translatedText: translated,
-            sourceLang: sourceLang.slice(0, 2).toUpperCase(),
-            targetLang: targetLang.slice(0, 2).toUpperCase(),
+            sourceLang: actualSource.slice(0, 2).toUpperCase(),
+            targetLang: actualTarget.slice(0, 2).toUpperCase(),
             timestamp: Date.now(),
           });
 
-          // TTS
-          speakText(translated, targetLang, () => {
+          // TTS with anti-feedback: pause mic, speak, resume mic
+          speakText(translated, actualTarget, onPauseMic, () => {
             setStatus('listening');
-            onSpeechEnd?.();
+            onResumeMic();
           });
         }
       }
@@ -109,7 +144,6 @@ export function useSpeechRecognition() {
     };
 
     recognition.onend = () => {
-      // Auto-restart if still in listening mode
       if (recognitionRef.current) {
         try { recognition.start(); } catch {}
       }
@@ -132,24 +166,15 @@ export function useSpeechRecognition() {
   return { startRecognition, stopRecognition };
 }
 
-function detectLanguage(text: string, pair: LanguagePair): boolean {
-  // Simple heuristic: Italian detection by common patterns
-  const langACode = pair.langA.slice(0, 2);
-  if (langACode === 'it') {
-    const italianPatterns = /\b(il|la|lo|le|gli|un|una|uno|di|da|in|con|su|per|che|non|è|sono|hai|ho|vorrei|dove|quanto|come|buon|ciao|grazie|favore|scusi)\b/i;
-    return italianPatterns.test(text);
-  }
-  // Default: assume langA
-  return true;
-}
-
-function speakText(text: string, lang: string, onEnd?: () => void) {
+function speakText(text: string, lang: string, onStart?: () => void, onEnd?: () => void) {
   if (!window.speechSynthesis) {
     onEnd?.();
     return;
   }
-  
+
   window.speechSynthesis.cancel();
+  onStart?.(); // Pause mic before speaking
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   utterance.rate = 1;

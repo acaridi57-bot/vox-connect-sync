@@ -1,11 +1,18 @@
 import { create } from 'zustand';
 
-export type LanguagePair = {
-  langA: string;
-  langB: string;
-  labelA: string;
-  labelB: string;
+export type Language = {
+  code: string;
+  label: string;
 };
+
+export const LANGUAGES: Language[] = [
+  { code: 'it-IT', label: 'Italiano' },
+  { code: 'en-US', label: 'English' },
+  { code: 'es-ES', label: 'Español' },
+  { code: 'fr-FR', label: 'Français' },
+  { code: 'de-DE', label: 'Deutsch' },
+  { code: 'zh-CN', label: '中文' },
+];
 
 export type Message = {
   id: string;
@@ -18,17 +25,10 @@ export type Message = {
 
 export type AppStatus = 'idle' | 'listening' | 'processing' | 'speaking';
 
-export const LANGUAGE_PAIRS: LanguagePair[] = [
-  { langA: 'it-IT', langB: 'en-US', labelA: 'Italiano', labelB: 'English' },
-  { langA: 'it-IT', langB: 'es-ES', labelA: 'Italiano', labelB: 'Español' },
-  { langA: 'it-IT', langB: 'fr-FR', labelA: 'Italiano', labelB: 'Français' },
-  { langA: 'it-IT', langB: 'de-DE', labelA: 'Italiano', labelB: 'Deutsch' },
-  { langA: 'it-IT', langB: 'zh-CN', labelA: 'Italiano', labelB: '中文' },
-];
-
 type AppState = {
   status: AppStatus;
-  selectedPairIndex: number;
+  sourceLangCode: string;
+  targetLangCode: string;
   messages: Message[];
   audioLevel: number;
   isSettingsOpen: boolean;
@@ -38,7 +38,9 @@ type AppState = {
   noiseReduction: boolean;
 
   setStatus: (s: AppStatus) => void;
-  setSelectedPairIndex: (i: number) => void;
+  setSourceLangCode: (code: string) => void;
+  setTargetLangCode: (code: string) => void;
+  swapLanguages: () => void;
   addMessage: (m: Message) => void;
   setAudioLevel: (l: number) => void;
   setSettingsOpen: (o: boolean) => void;
@@ -46,12 +48,12 @@ type AppState = {
   setVolume: (v: number) => void;
   setFastMode: (f: boolean) => void;
   setNoiseReduction: (n: boolean) => void;
-  getSelectedPair: () => LanguagePair;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
   status: 'idle',
-  selectedPairIndex: 0,
+  sourceLangCode: 'it-IT',
+  targetLangCode: 'en-US',
   messages: [],
   audioLevel: 0,
   isSettingsOpen: false,
@@ -61,7 +63,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   noiseReduction: true,
 
   setStatus: (s) => set({ status: s }),
-  setSelectedPairIndex: (i) => set({ selectedPairIndex: i }),
+  setSourceLangCode: (code) => set({ sourceLangCode: code }),
+  setTargetLangCode: (code) => set({ targetLangCode: code }),
+  swapLanguages: () => {
+    const { sourceLangCode, targetLangCode } = get();
+    set({ sourceLangCode: targetLangCode, targetLangCode: sourceLangCode });
+  },
   addMessage: (m) => set((state) => ({ messages: [...state.messages, m] })),
   setAudioLevel: (l) => set({ audioLevel: l }),
   setSettingsOpen: (o) => set({ isSettingsOpen: o }),
@@ -69,5 +76,4 @@ export const useAppStore = create<AppState>((set, get) => ({
   setVolume: (v) => set({ volume: v }),
   setFastMode: (f) => set({ fastMode: f }),
   setNoiseReduction: (n) => set({ noiseReduction: n }),
-  getSelectedPair: () => LANGUAGE_PAIRS[get().selectedPairIndex],
 }));

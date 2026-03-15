@@ -1,50 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
+    --background: 220 27% 97%;
+    --foreground: 0 0% 10%;
 
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
 
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 211 78% 51%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 145 77% 46%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 100% 39%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 27% 94%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 220 14% 92%;
+    --muted-foreground: 0 0% 42%;
 
-    --accent: 142 71% 45%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 145 77% 46%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 211 78% 51%;
+    --border: 220 13% 87%;
+    --input: 220 13% 87%;
+    --ring: 145 77% 46%;
 
     --radius: 1rem;
 
     /* VoxTranslate custom tokens */
-    --vox-bg: 222 47% 5%;
-    --vox-bg-deep: 215 28% 10%;
-    --vox-bubble-user: 215 28% 17%;
-    --vox-bubble-ai: 220 90% 56%;
-    --vox-primary: 211 78% 51%;
-    --vox-secondary: 160 100% 39%;
-    --vox-accent: 142 71% 45%;
-    --vox-gradient: linear-gradient(135deg, hsl(211 78% 51%) 0%, hsl(160 100% 39%) 100%);
-    --vox-glow: 0 0 40px hsl(160 100% 39% / 0.3);
-    --vox-shadow-bubble: 0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -2px rgba(0,0,0,0.2);
+    --vox-primary: 145 77% 46%;
+    --vox-green: 145 77% 46%;
+    --vox-bg: 220 27% 97%;
+    --vox-card: 0 0% 100%;
+    --vox-subtitle: 0 0% 42%;
+    --vox-shadow-card: 0 4px 12px rgba(0,0,0,0.05);
+    --vox-shadow-button: 0 10px 25px rgba(0,0,0,0.1);
   }
 }
 
@@ -55,7 +54,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior: none;
@@ -65,23 +64,11 @@
 }
 
 @layer utilities {
-  .vox-gradient {
-    background: linear-gradient(135deg, hsl(211 78% 51%) 0%, hsl(160 100% 39%) 100%);
-  }
-
   .vox-gradient-text {
-    background: linear-gradient(135deg, hsl(211 78% 51%) 0%, hsl(160 100% 39%) 100%);
+    background: linear-gradient(135deg, hsl(145 77% 46%) 0%, hsl(160 100% 39%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-  }
-
-  .vox-glow {
-    box-shadow: 0 0 40px hsl(160 100% 39% / 0.3);
-  }
-
-  .vox-glow-active {
-    box-shadow: 0 0 60px hsl(160 100% 39% / 0.5), 0 0 120px hsl(211 78% 51% / 0.2);
   }
 
   .safe-top {

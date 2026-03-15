@@ -47,12 +47,10 @@ export default {
         },
         vox: {
           bg: "hsl(var(--vox-bg))",
-          "bg-deep": "hsl(var(--vox-bg-deep))",
-          "bubble-user": "hsl(var(--vox-bubble-user))",
-          "bubble-ai": "hsl(var(--vox-bubble-ai))",
           primary: "hsl(var(--vox-primary))",
-          secondary: "hsl(var(--vox-secondary))",
-          accent: "hsl(var(--vox-accent))",
+          green: "hsl(var(--vox-green))",
+          card: "hsl(var(--vox-card))",
+          subtitle: "hsl(var(--vox-subtitle))",
         },
       },
       borderRadius: {
