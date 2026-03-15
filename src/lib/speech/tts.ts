@@ -7,24 +7,35 @@ function pickVoice(voiceName: string | undefined, lang: string): SpeechSynthesis
 
   const langPrefix = lang.slice(0, 2).toLowerCase();
 
-  // Force female voice for Chinese
+  // Force best available natural Chinese voice (female first, then male fallback)
   if (langPrefix === 'zh') {
-    // Prefer known female Chinese voices
-    const femaleNames = [
-      'Google 普通话（中国大陆）',
-      'Tingting',
-      'Lili',
-      'Microsoft Xiaoxiao Online (Natural)',
-      'Microsoft Huihui',
+    const zhVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith('zh'));
+
+    const femalePatterns = [
+      /google\s*普通话（中国大陆）/i,
+      /xiaoxiao/i,
+      /tingting/i,
+      /lili/i,
+      /huihui/i,
+      /xiaoyi/i,
     ];
-    for (const name of femaleNames) {
-      const v = voices.find((x) => x.name === name);
+
+    for (const p of femalePatterns) {
+      const v = zhVoices.find((x) => p.test(x.name));
       if (v) return v;
     }
-    // Fallback: any zh-CN voice
-    const zhVoice = voices.find((v) =>
-      v.lang === 'zh-CN' || v.lang?.startsWith('zh')
-    );
+
+    // Male but natural fallback if female is unavailable
+    const malePatterns = [/yunyang/i, /yunxi/i, /kangkang/i, /male/i];
+    for (const p of malePatterns) {
+      const v = zhVoices.find((x) => p.test(x.name));
+      if (v) return v;
+    }
+
+    const naturalZh = zhVoices.find((v) => /natural|neural|google/i.test(v.name));
+    if (naturalZh) return naturalZh;
+
+    const zhVoice = zhVoices[0];
     if (zhVoice) return zhVoice;
   }
 
