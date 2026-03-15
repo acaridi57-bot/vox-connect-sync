@@ -52,7 +52,7 @@ export function LanguageSelector() {
   const setTo = useAppStore((s) => s.setTargetLangCode);
   const swap = useAppStore((s) => s.swapLanguages);
 
-  const findFlag = (code: string) => LANGS.find((l) => l.code === code)?.flag ?? "🌐";
+  
 
   return (
     <div className="flex items-center gap-3 w-full">
