@@ -12,20 +12,19 @@ import logo from '@/assets/logo.png';
 export default function Index() {
   const status = useAppStore((s) => s.status);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
-  const sourceLangCode = useAppStore((s) => s.sourceLangCode);
-  const targetLangCode = useAppStore((s) => s.targetLangCode);
   const { startMic, stopMic, pauseMic, resumeMic } = useMicrophone();
   const { startRecognition, stopRecognition } = useSpeechRecognition();
 
   const handleToggle = useCallback(() => {
     if (status === 'idle') {
       startMic();
-      startRecognition(sourceLangCode, targetLangCode, pauseMic, resumeMic);
+      startRecognition(pauseMic, resumeMic);
     } else {
       stopMic();
       stopRecognition();
+      window.speechSynthesis?.cancel();
     }
-  }, [status, startMic, stopMic, startRecognition, stopRecognition, sourceLangCode, targetLangCode, pauseMic, resumeMic]);
+  }, [status, startMic, stopMic, startRecognition, stopRecognition, pauseMic, resumeMic]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[hsl(var(--background))] overflow-hidden">
