@@ -7,14 +7,23 @@ function pickVoice(voiceName: string | undefined, lang: string): SpeechSynthesis
 
   const langPrefix = lang.slice(0, 2).toLowerCase();
 
-  // Force specific voice for Chinese
+  // Force female voice for Chinese
   if (langPrefix === 'zh') {
-    const googleZh = voices.find((v) => v.name === 'Google 普通话（中国大陆）');
-    if (googleZh) return googleZh;
+    // Prefer known female Chinese voices
+    const femaleNames = [
+      'Google 普通话（中国大陆）',
+      'Tingting',
+      'Lili',
+      'Microsoft Xiaoxiao Online (Natural)',
+      'Microsoft Huihui',
+    ];
+    for (const name of femaleNames) {
+      const v = voices.find((x) => x.name === name);
+      if (v) return v;
+    }
+    // Fallback: any zh-CN voice
     const zhVoice = voices.find((v) =>
-      v.name.includes('普通话') ||
-      v.name.includes('zh-CN') ||
-      v.lang === 'zh-CN'
+      v.lang === 'zh-CN' || v.lang?.startsWith('zh')
     );
     if (zhVoice) return zhVoice;
   }
