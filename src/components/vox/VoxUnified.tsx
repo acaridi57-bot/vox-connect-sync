@@ -159,7 +159,7 @@ export function ListeningIndicator({ onToggle }: { onToggle: () => void }) {
 /* -------------------------------------------------------
    3️⃣  SETTINGS MODAL — tema verde + Sintesi Vocale
 ------------------------------------------------------- */
-export const SettingsModal = React.forwardRef<HTMLDivElement, {}>(function SettingsModal(_props, _ref) {
+export function SettingsModal() {
   const isOpen = useAppStore((s) => s.isSettingsOpen);
   const setOpen = useAppStore((s) => s.setSettingsOpen);
 
