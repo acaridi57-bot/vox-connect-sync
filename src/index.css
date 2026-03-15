@@ -7,22 +7,22 @@
 @layer base {
   :root {
     --background: 220 27% 97%;
-    --foreground: 0 0% 10%;
+    --foreground: 220 20% 22%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 220 20% 22%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 220 20% 22%;
 
     --primary: 145 77% 46%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 27% 94%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 220 20% 22%;
 
     --muted: 220 14% 92%;
-    --muted-foreground: 0 0% 42%;
+    --muted-foreground: 220 15% 40%;
 
     --accent: 145 77% 46%;
     --accent-foreground: 0 0% 100%;
@@ -41,7 +41,7 @@
     --vox-green: 145 77% 46%;
     --vox-bg: 220 27% 97%;
     --vox-card: 0 0% 100%;
-    --vox-subtitle: 0 0% 42%;
+    --vox-subtitle: 220 15% 40%;
     --vox-shadow-card: 0 4px 12px rgba(0,0,0,0.05);
     --vox-shadow-button: 0 10px 25px rgba(0,0,0,0.1);
   }
