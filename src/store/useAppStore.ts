@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export type Language = { code: string; label: string; };
 export type UserGender = 'female' | 'male';
+export type AppLang = 'it' | 'en' | 'es' | 'fr' | 'de' | 'zh' | 'sq';
 
 export const LANGUAGES: Language[] = [
   { code: 'it-IT', label: 'Italiano' },
@@ -39,6 +40,7 @@ type AppState = {
   speechRate: number;
   speechPitch: number;
   userGender: UserGender;
+  appLang: AppLang;
   clearMessages: () => void;
   setStatus: (s: AppStatus) => void;
   setSourceLangCode: (code: string) => void;
@@ -55,6 +57,7 @@ type AppState = {
   setSpeechRate: (r: number) => void;
   setSpeechPitch: (p: number) => void;
   setUserGender: (g: UserGender) => void;
+  setAppLang: (l: AppLang) => void;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -72,6 +75,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   speechRate: 0.9,
   speechPitch: 0.8,
   userGender: 'female',
+  appLang: 'it',
   clearMessages: () => set({ messages: [] }),
   setStatus: (s) => set({ status: s }),
   setSourceLangCode: (code) => set({ sourceLangCode: code }),
@@ -91,4 +95,5 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSpeechRate: (r) => set({ speechRate: r }),
   setSpeechPitch: (p) => set({ speechPitch: p }),
   setUserGender: (g) => set({ userGender: g }),
+  setAppLang: (l) => set({ appLang: l }),
 }));
