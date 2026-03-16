@@ -87,7 +87,7 @@ function speakWithBrowser(text: string, lang: string, onEnd?: () => void) {
 
   stopCurrentAudio();
   window.speechSynthesis.cancel();
-
+  
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang;
   u.rate = typeof speechRate === 'number' ? speechRate : 1;
@@ -112,54 +112,8 @@ export async function speakTextWithSettings(text: string, lang: string, onEnd?: 
   const clean = text?.trim();
   if (!clean) { onEnd?.(); return; }
 
-  const { volume, speechRate, userGender } = useAppStore.getState();
-
-  const endpoint = (import.meta as any)?.env?.VITE_TTS_ENDPOINT || 'https://speaklive-tts-backend-production.up.railway.app/api/tts';
-
-  try {
-    stopCurrentAudio();
-    window.speechSynthesis?.cancel();
-
-    const ttsController = new AbortController();
-    const ttsTimeout = setTimeout(() => ttsController.abort(), 8000); // 8s timeout
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: ttsController.signal,
-      body: JSON.stringify({
-        text: clean.slice(0, 4096),
-        lang,
-        voice: userGender === 'male' ? 'cedar' : 'marin',
-        speed: typeof speechRate === 'number' ? speechRate : 1,
-      }),
-    });
-    clearTimeout(ttsTimeout);
-
-    if (!response.ok) throw new Error(`TTS endpoint error ${response.status}`);
-
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    currentAudio = audio;
-    audio.volume = typeof volume === 'number' ? clamp(volume / 100, 0, 1) : 1;
-
-    audio.onended = () => {
-      URL.revokeObjectURL(url);
-      if (currentAudio === audio) currentAudio = null;
-      onEnd?.();
-    };
-    audio.onerror = () => {
-      URL.revokeObjectURL(url);
-      if (currentAudio === audio) currentAudio = null;
-      speakWithBrowser(clean, lang, onEnd);
-    };
-
-    await audio.play();
-  } catch (err) {
-    console.warn('[VT TTS] OpenAI non disponibile, fallback browser:', err);
-    speakWithBrowser(clean, lang, onEnd);
-  }
+  // Fast path: always use device/browser TTS for instant playback.
+  speakWithBrowser(clean, lang, onEnd);
 }
 
 export function stopSpeaking() {
