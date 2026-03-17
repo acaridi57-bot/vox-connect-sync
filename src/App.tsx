@@ -18,6 +18,7 @@ import {
   Trash2,
   Volume2,
 } from "lucide-react";
+import { translateText } from "@/lib/speech/demoTranslations";
 
 declare global {
   interface Window {
