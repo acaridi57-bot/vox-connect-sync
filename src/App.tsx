@@ -479,7 +479,7 @@ function App() {
       }
 
       setStatus("error");
-      setErrorText("Errore durante il riconoscimento vocale.");
+      setErrorText("Error during voice recognition.");
       if (shouldKeepListeningRef.current) {
         scheduleRestartListening();
       }
