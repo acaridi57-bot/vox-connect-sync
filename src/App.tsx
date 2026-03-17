@@ -854,14 +854,50 @@ function App() {
             </p>
 
             <div className="mt-6 flex flex-col items-center justify-center">
-              <button
-                type="button"
-                onClick={() => void handleContinuousListeningStart()}
-                className="flex h-28 w-28 items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] transition hover:bg-[#165330] active:scale-[0.98]"
-                aria-label="Start continuous voice translation"
-              >
-                <Mic className="h-12 w-12" strokeWidth={1.8} />
-              </button>
+              <div className="relative flex items-center justify-center">
+                {/* Audio level ring */}
+                {status === "listening" && audioLevel > 0.05 && (
+                  <div
+                    className="absolute rounded-full border-[3px] border-[#1C6B3B] pointer-events-none transition-transform duration-75"
+                    style={{
+                      width: `${112 + audioLevel * 48}px`,
+                      height: `${112 + audioLevel * 48}px`,
+                      opacity: 0.15 + audioLevel * 0.55,
+                    }}
+                  />
+                )}
+                {status === "listening" && audioLevel > 0.15 && (
+                  <div
+                    className="absolute rounded-full border-2 border-[#1C6B3B]/30 pointer-events-none transition-transform duration-100"
+                    style={{
+                      width: `${112 + audioLevel * 80}px`,
+                      height: `${112 + audioLevel * 80}px`,
+                      opacity: audioLevel * 0.35,
+                    }}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => void handleContinuousListeningStart()}
+                  className="relative flex h-28 w-28 items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] transition hover:bg-[#165330] active:scale-[0.98]"
+                  aria-label="Start continuous voice translation"
+                >
+                  <Mic className="h-12 w-12" strokeWidth={1.8} />
+                </button>
+              </div>
+
+              {/* Audio level bar */}
+              {status === "listening" && (
+                <div className="mt-4 w-48 h-2 rounded-full bg-[#D7E3DA] overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-75"
+                    style={{
+                      width: `${Math.max(audioLevel * 100, 2)}%`,
+                      backgroundColor: audioLevel > 0.6 ? "#dc2626" : audioLevel > 0.3 ? "#f59e0b" : "#1C6B3B",
+                    }}
+                  />
+                </div>
+              )}
 
               <p className="mt-4 max-w-[300px] text-center text-[15px] leading-relaxed text-[#4E6358]">
                 Tocca il microfono grande per avviare l'ascolto continuo; si ferma solo spegnendo il tasto piccolo
