@@ -835,17 +835,24 @@ function TopActionButton({
   children,
   ariaLabel,
   onClick,
+  isActive = false,
 }: {
   children: ReactNode;
   ariaLabel: string;
   onClick: () => void;
+  isActive?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_4px_10px_rgba(28,107,59,0.16)] transition hover:bg-[#165330] active:scale-[0.98]"
+      aria-pressed={isActive}
+      className={`flex h-[42px] w-[42px] items-center justify-center rounded-full border text-white shadow-[0_4px_10px_rgba(28,107,59,0.16)] transition active:scale-[0.98] ${
+        isActive
+          ? "border-[#1C6B3B] bg-[#1C6B3B]"
+          : "border-[#D7E3DA] bg-white text-[#1C6B3B] hover:bg-[#F4F8F5]"
+      }`}
     >
       {children}
     </button>
