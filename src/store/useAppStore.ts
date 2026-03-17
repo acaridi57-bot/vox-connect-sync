@@ -59,6 +59,10 @@ type AppState = {
   setSpeechRate: (r: number) => void;
   setSpeechPitch: (p: number) => void;
   setUserGender: (g: UserGender) => void;
+  setEqBass: (v: number) => void;
+  setEqMid: (v: number) => void;
+  setEqTreble: (v: number) => void;
+  setVoiceSetupOpen: (o: boolean) => void;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
