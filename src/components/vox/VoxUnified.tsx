@@ -60,21 +60,21 @@ function filterVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
 function bestVoiceForLang(voices: SpeechSynthesisVoice[], langCode: string, gender: "female" | "male"): SpeechSynthesisVoice | undefined {
   const prefix = langCode.slice(0, 2).toLowerCase();
   const FEMALE: Record<string, string[]> = {
-    it: ["alice", "google italiano", "federica", "paola"],
-    en: ["google us english", "karen", "victoria", "google uk english female"],
-    es: ["paulina", "google español"],
-    fr: ["amelie", "amélie", "marie", "google français"],
-    de: ["anna", "google deutsch"],
-    zh: ["google 普通话", "普通话"],
+    it: ["alice", "google italiano"],
+    en: ["google us english", "google uk english female"],
+    es: ["google español"],
+    fr: ["google français"],
+    de: ["google deutsch"],
+    zh: ["google 普通话"],
     sq: ["google shqip"],
   };
   const MALE: Record<string, string[]> = {
-    it: ["luca", "google italiano"],
+    it: ["google italiano"],
     en: ["google uk english male", "google us english"],
-    es: ["jorge", "google español"],
+    es: ["google español"],
     fr: ["google français"],
-    de: ["yannick", "google deutsch"],
-    zh: ["google 普通话", "普通话"],
+    de: ["google deutsch"],
+    zh: ["google 普通话"],
     sq: ["google shqip"],
   };
   const preferred = gender === "female" ? (FEMALE[prefix] ?? []) : (MALE[prefix] ?? []);
