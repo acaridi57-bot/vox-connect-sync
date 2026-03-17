@@ -494,7 +494,7 @@ function App() {
       setStatus("error");
       setErrorText("Impossibile avviare l'ascolto vocale.");
     }
-  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, handleTranslate, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
+  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
   // Big mic button: toggles start/stop directly
   const handleBigMicToggle = useCallback(async () => {
