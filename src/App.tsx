@@ -95,6 +95,7 @@ function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const currentAudioLevelRef = useRef(0);
+  const dictatedTextRef = useRef("");
   const rafRef = useRef<number>(0);
 
   const canSwap = useMemo(
@@ -304,18 +305,19 @@ function App() {
 
   const handleTranslate = useCallback(
     async (rawText?: string) => {
-      const cleanText = (rawText ?? text).trim();
+      const cleanText = (rawText ?? text)
+        .replace(/\s*\[.*?\]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
       if (!cleanText) return;
 
+      dictatedTextRef.current = cleanText;
       setErrorText("");
+      setTranslatedText("");
       setStatus("translating");
 
       try {
         const translated = await translateText(cleanText, fromLang.code, toLang.code);
-
-        if (!translated || translated === cleanText) {
-          throw new Error("No translation returned");
-        }
 
         setText(cleanText);
         setTranslatedText(translated);
@@ -379,6 +381,9 @@ function App() {
     }
 
     stopSpeaking();
+    dictatedTextRef.current = "";
+    setText("");
+    setTranslatedText("");
     setErrorText("");
     clearRestartTimeout();
 
@@ -438,15 +443,19 @@ function App() {
             console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
             continue;
           }
-          // Only set text in textarea — user presses TRADUCI to translate
-          setText((prev) => prev ? prev + " " + transcript : transcript);
+
+          const nextText = dictatedTextRef.current
+            ? `${dictatedTextRef.current} ${transcript}`
+            : transcript;
+
+          dictatedTextRef.current = nextText;
+          setText(nextText);
+          setTranslatedText("");
         } else {
-          // Show interim results in real-time
-          setText((prev) => {
-            // Replace any previous interim by keeping only finalized text
-            const base = prev.replace(/\s*\[.*\]$/, "");
-            return base ? base + " [" + transcript + "]" : "[" + transcript + "]";
-          });
+          const previewText = dictatedTextRef.current
+            ? `${dictatedTextRef.current} [${transcript}]`
+            : `[${transcript}]`;
+          setText(previewText);
         }
         break;
       }
@@ -502,6 +511,7 @@ function App() {
       // Stop everything
       stopListening();
       stopSpeaking();
+      dictatedTextRef.current = "";
       releaseMicPermission();
       setIsMicEnabled(false);
       setErrorText("");
@@ -522,11 +532,13 @@ function App() {
   }, [startListening]);
 
   const handleSend = useCallback(async () => {
-    // Clean interim brackets before translating
-    const cleanText = text.replace(/\s*\[.*?\]/g, "").trim();
+    const cleanText = (dictatedTextRef.current || text)
+      .replace(/\s*\[.*?\]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!cleanText) return;
 
-    // Stop mic/recognition first
+    stopSpeaking();
     shouldKeepListeningRef.current = false;
     clearRestartTimeout();
     try { recognitionRef.current?.stop?.(); } catch {}
@@ -534,18 +546,20 @@ function App() {
     releaseMicPermission();
     setIsMicEnabled(false);
 
-    // Unlock speech synthesis in user gesture context (needed for mobile)
     const unlockUtterance = new SpeechSynthesisUtterance("");
     unlockUtterance.volume = 0;
     window.speechSynthesis?.speak(unlockUtterance);
 
+    dictatedTextRef.current = cleanText;
     setText(cleanText);
+    setTranslatedText("");
     await handleTranslate(cleanText);
-  }, [clearRestartTimeout, handleTranslate, releaseMicPermission, text]);
+  }, [clearRestartTimeout, handleTranslate, releaseMicPermission, stopSpeaking, text]);
 
   const handleDelete = useCallback(async () => {
     stopListening();
     stopSpeaking();
+    dictatedTextRef.current = "";
     releaseMicPermission();
     setIsMicEnabled(false);
     setText("");
@@ -880,7 +894,15 @@ function App() {
               <div className="flex-1 rounded-[18px] border border-[#D7E3DA] bg-white/90 shadow-[0_8px_24px_rgba(22,42,28,0.08)]">
                 <textarea
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    const nextValue = e.target.value;
+                    dictatedTextRef.current = nextValue
+                      .replace(/\s*\[.*?\]/g, "")
+                      .replace(/\s+/g, " ")
+                      .trim();
+                    setText(nextValue);
+                    setTranslatedText("");
+                  }}
                   onKeyDown={onTextareaKeyDown}
                   rows={1}
                   placeholder="Scrivi un testo da tradurre..."
