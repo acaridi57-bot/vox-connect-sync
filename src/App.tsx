@@ -95,6 +95,7 @@ function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const currentAudioLevelRef = useRef(0);
+  const dictatedTextRef = useRef("");
   const rafRef = useRef<number>(0);
 
   const canSwap = useMemo(
