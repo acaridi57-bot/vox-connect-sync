@@ -667,7 +667,7 @@ function App() {
             </div>
 
             <div className="grid shrink-0 grid-cols-4 gap-2">
-              <TopActionButton ariaLabel="Power microphone" onClick={() => void handleMicPowerToggle()} isActive={isMicEnabled}>
+              <TopActionButton ariaLabel="Voice setup" onClick={handleSmallMicClick}>
                 <Mic className="h-[18px] w-[18px]" />
               </TopActionButton>
 
