@@ -591,7 +591,7 @@ function App() {
 
       if (meta && e.key.toLowerCase() === "m") {
         e.preventDefault();
-        void handleMicPowerToggle();
+        void handleBigMicToggle();
       }
 
       if (meta && e.key.toLowerCase() === "l") {
