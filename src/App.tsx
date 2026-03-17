@@ -18,6 +18,7 @@ import {
   Trash2,
   Volume2,
 } from "lucide-react";
+import { translateText } from "@/lib/speech/demoTranslations";
 
 declare global {
   interface Window {
@@ -68,67 +69,6 @@ const createId = () => {
     return globalThis.crypto.randomUUID();
   }
   return `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-};
-
-const parseTranslation = (data: any): string => {
-  if (!data) return "";
-  return (
-    data.translation ||
-    data.translated_text ||
-    data.translatedText ||
-    data.result ||
-    data.output ||
-    data.text ||
-    ""
-  );
-};
-
-const normalizeConversation = (data: any): ConversationItem[] => {
-  const rawItems = Array.isArray(data)
-    ? data
-    : data?.conversation || data?.history || data?.messages || data?.items || [];
-
-  if (!Array.isArray(rawItems)) return [];
-
-  return rawItems
-    .map((item: any, index: number) => {
-      const source =
-        item?.source ||
-        item?.original ||
-        item?.input ||
-        item?.text ||
-        item?.message ||
-        item?.user_text ||
-        "";
-      const translated =
-        item?.translated ||
-        item?.translation ||
-        item?.output ||
-        item?.assistant_text ||
-        item?.translated_text ||
-        "";
-      const from =
-        item?.from ||
-        item?.source_lang ||
-        item?.sourceLanguage ||
-        item?.source_language ||
-        "";
-      const to =
-        item?.to ||
-        item?.target_lang ||
-        item?.targetLanguage ||
-        item?.target_language ||
-        "";
-
-      return {
-        id: item?.id || `history_${index}_${createId()}`,
-        source: String(source).trim(),
-        translated: String(translated).trim(),
-        from: String(from).trim(),
-        to: String(to).trim(),
-      };
-    })
-    .filter((item: ConversationItem) => item.source || item.translated);
 };
 
 function App() {
@@ -220,25 +160,8 @@ function App() {
     [stopSpeaking, toLang.code, toLang.speechCode]
   );
 
-  const loadConversation = useCallback(async (sid: string) => {
-    if (!sid) return;
-
-    try {
-      const response = await fetch(`/api/conversation/${sid}`);
-      if (!response.ok) return;
-
-      const data = await response.json();
-      const items = normalizeConversation(data);
-
-      if (items.length > 0) {
-        setConversation(items);
-        const last = items[items.length - 1];
-        setText(last.source || "");
-        setTranslatedText(last.translated || "");
-      }
-    } catch {
-      // se fallisce, amen
-    }
+  const loadConversation = useCallback(async (_sid: string) => {
+    // Conversation history is kept in local state only
   }, []);
 
   const handleTranslate = useCallback(
@@ -250,33 +173,10 @@ function App() {
       setStatus("translating");
 
       try {
-        const response = await fetch("/api/translate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text: cleanText,
-            source_lang: fromLang.code,
-            target_lang: toLang.code,
-            sourceLanguage: fromLang.code,
-            targetLanguage: toLang.code,
-            from_language: fromLang.code,
-            to_language: toLang.code,
-            session_id: sessionId,
-          }),
-        });
+        const translated = await translateText(cleanText, fromLang.code, toLang.code);
 
-        if (!response.ok) {
-          const raw = await response.text();
-          throw new Error(raw || "Translation request failed");
-        }
-
-        const data = await response.json();
-        const translated = parseTranslation(data);
-
-        if (!translated) {
-          throw new Error("No translation returned by /api/translate");
+        if (!translated || translated === cleanText) {
+          throw new Error("No translation returned");
         }
 
         setText(cleanText);
@@ -302,7 +202,7 @@ function App() {
         console.error(error);
         setStatus("error");
         setErrorText(
-          "Traduzione non riuscita. Controlla endpoint /api/translate o payload."
+          "Traduzione non riuscita. Riprova tra qualche secondo."
         );
       }
     },
@@ -310,7 +210,6 @@ function App() {
       autoSpeak,
       fromLang.code,
       fromLang.label,
-      sessionId,
       speakText,
       text,
       toLang.code,
@@ -403,23 +302,13 @@ function App() {
     setShowSettings(false);
     setStatus("idle");
 
-    if (sessionId) {
-      try {
-        await fetch(`/api/conversation/${sessionId}`, {
-          method: "DELETE",
-        });
-      } catch {
-        // se non cancella lato backend, pazienza
-      }
-    }
-
     const newSessionId = createId();
     setSessionId(newSessionId);
 
     if (typeof window !== "undefined") {
       localStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
     }
-  }, [sessionId, stopListening, stopSpeaking]);
+  }, [stopListening, stopSpeaking]);
 
   const handleShare = useCallback(async () => {
     const content = translatedText
