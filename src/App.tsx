@@ -464,8 +464,10 @@ function App() {
     }
   }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, handleTranslate, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
-  const handleMicPowerToggle = useCallback(async () => {
-    if (isMicEnabled) {
+  // Big mic button: toggles start/stop directly
+  const handleBigMicToggle = useCallback(async () => {
+    if (isMicEnabled && shouldKeepListeningRef.current) {
+      // Stop everything
       stopListening();
       stopSpeaking();
       releaseMicPermission();
@@ -474,26 +476,18 @@ function App() {
       return;
     }
 
-    try {
-      await requestMicrophonePermission();
-      setIsMicEnabled(true);
-      setStatus("idle");
-      setErrorText("");
-    } catch (error: any) {
-      console.error(error);
-      setStatus("error");
-      setErrorText("Permesso microfono negato dal dispositivo.");
-    }
-  }, [isMicEnabled, releaseMicPermission, requestMicrophonePermission, stopListening, stopSpeaking]);
+    // Start listening (requests permission directly)
+    await startListening();
+  }, [isMicEnabled, releaseMicPermission, startListening, stopListening, stopSpeaking]);
+
+  // Small mic button: opens voice setup
+  const handleSmallMicClick = useCallback(() => {
+    useAppStore.getState().setVoiceSetupOpen(true);
+  }, []);
 
   const handleContinuousListeningStart = useCallback(async () => {
-    if (!isMicEnabled) {
-      await handleMicPowerToggle();
-      if (!mediaStreamRef.current) return;
-    }
-
     await startListening();
-  }, [handleMicPowerToggle, isMicEnabled, startListening]);
+  }, [startListening]);
 
   const handleSend = useCallback(async () => {
     await handleTranslate(text);
