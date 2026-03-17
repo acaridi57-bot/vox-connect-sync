@@ -451,7 +451,7 @@ function App() {
       setStatus("error");
       setErrorText("Impossibile avviare l'ascolto vocale.");
     }
-  }, [clearRestartTimeout, fromLang.speechCode, handleTranslate, isMicEnabled, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
+  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, handleTranslate, isMicEnabled, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
   const handleMicPowerToggle = useCallback(async () => {
     if (isMicEnabled) {
