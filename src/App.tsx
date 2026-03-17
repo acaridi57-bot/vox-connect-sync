@@ -921,7 +921,7 @@ function App() {
             </div>
 
             <p className="mt-2 px-1 text-[13px] text-[#6E7E75]">
-              Enter per inviare · Ctrl/Cmd+Enter invia · Shift+Enter va a capo
+              Enter to send · Ctrl/Cmd+Enter send · Shift+Enter new line
             </p>
 
             <div className="mt-6 flex flex-col items-center justify-center">
