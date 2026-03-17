@@ -84,6 +84,7 @@ function App() {
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [isMicEnabled, setIsMicEnabled] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
 
   const recognitionRef = useRef<any>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
