@@ -151,11 +151,16 @@ function App() {
     source.connect(analyser);
     analyserRef.current = analyser;
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    let frameCount = 0;
     const monitor = () => {
       analyser.getByteFrequencyData(dataArray);
       let sum = 0;
       for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-      currentAudioLevelRef.current = Math.min(sum / dataArray.length / 128, 1);
+      const level = Math.min(sum / dataArray.length / 128, 1);
+      currentAudioLevelRef.current = level;
+      // Update React state every ~3 frames (~50ms) to avoid excessive re-renders
+      frameCount++;
+      if (frameCount % 3 === 0) setAudioLevel(level);
       rafRef.current = requestAnimationFrame(monitor);
     };
     monitor();
