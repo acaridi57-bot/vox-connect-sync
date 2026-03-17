@@ -191,7 +191,7 @@ function App() {
   }, []);
 
   const getStatusLabel = useCallback(() => {
-    if (!isMicEnabled) return "Microfono spento";
+    if (!isMicEnabled) return "Microphone off";
     switch (status) {
       case "listening":
         return "Listening...";
@@ -202,7 +202,7 @@ function App() {
       case "error":
         return "Error";
       default:
-        return "Microfono attivo";
+        return "Microphone on";
     }
   }, [isMicEnabled, status]);
 
