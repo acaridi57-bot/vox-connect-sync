@@ -363,23 +363,13 @@ function App() {
     setShowSettings(false);
     setStatus("idle");
 
-    if (sessionId) {
-      try {
-        await fetch(`/api/conversation/${sessionId}`, {
-          method: "DELETE",
-        });
-      } catch {
-        // se non cancella lato backend, pazienza
-      }
-    }
-
     const newSessionId = createId();
     setSessionId(newSessionId);
 
     if (typeof window !== "undefined") {
       localStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
     }
-  }, [sessionId, stopListening, stopSpeaking]);
+  }, [stopListening, stopSpeaking]);
 
   const handleShare = useCallback(async () => {
     const content = translatedText
