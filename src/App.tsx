@@ -418,7 +418,7 @@ function App() {
     recognitionRef.current = recognition;
 
     recognition.lang = fromLang.speechCode;
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
@@ -427,33 +427,37 @@ function App() {
     };
 
     recognition.onresult = (event: any) => {
+      let finalizedText = dictatedTextRef.current;
+      let interimTranscript = "";
+
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results?.[i];
         const transcript = result?.[0]?.transcript?.trim?.() || "";
         if (!transcript) continue;
 
         if (result?.isFinal) {
-          const threshold = getSensitivityThreshold();
-          if (currentAudioLevelRef.current < threshold) {
-            console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
-            continue;
-          }
-
-          const nextText = dictatedTextRef.current
-            ? `${dictatedTextRef.current} ${transcript}`
-            : transcript;
-
-          dictatedTextRef.current = nextText;
-          setText(nextText);
-          setTranslatedText("");
+          finalizedText = finalizedText ? `${finalizedText} ${transcript}` : transcript;
         } else {
-          const previewText = dictatedTextRef.current
-            ? `${dictatedTextRef.current} [${transcript}]`
-            : `[${transcript}]`;
-          setText(previewText);
+          interimTranscript = interimTranscript
+            ? `${interimTranscript} ${transcript}`
+            : transcript;
         }
-        break;
       }
+
+      const normalizedFinalText = finalizedText.replace(/\s+/g, " ").trim();
+      dictatedTextRef.current = normalizedFinalText;
+      setTranslatedText("");
+
+      if (interimTranscript) {
+        setText(
+          normalizedFinalText
+            ? `${normalizedFinalText} [${interimTranscript}]`
+            : `[${interimTranscript}]`
+        );
+        return;
+      }
+
+      setText(normalizedFinalText);
     };
 
     recognition.onerror = (event: any) => {
