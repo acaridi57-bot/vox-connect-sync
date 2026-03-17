@@ -396,6 +396,13 @@ function App() {
         const transcript = result[0]?.transcript?.trim?.() || "";
         if (!transcript) continue;
 
+        // Check audio level against sensitivity threshold
+        const threshold = getSensitivityThreshold();
+        if (currentAudioLevelRef.current < threshold) {
+          console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
+          continue;
+        }
+
         setText(transcript);
         void handleTranslate(transcript);
         break;
