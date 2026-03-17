@@ -443,15 +443,19 @@ function App() {
             console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
             continue;
           }
-          // Only set text in textarea — user presses TRADUCI to translate
-          setText((prev) => prev ? prev + " " + transcript : transcript);
+
+          const nextText = dictatedTextRef.current
+            ? `${dictatedTextRef.current} ${transcript}`
+            : transcript;
+
+          dictatedTextRef.current = nextText;
+          setText(nextText);
+          setTranslatedText("");
         } else {
-          // Show interim results in real-time
-          setText((prev) => {
-            // Replace any previous interim by keeping only finalized text
-            const base = prev.replace(/\s*\[.*\]$/, "");
-            return base ? base + " [" + transcript + "]" : "[" + transcript + "]";
-          });
+          const previewText = dictatedTextRef.current
+            ? `${dictatedTextRef.current} [${transcript}]`
+            : `[${transcript}]`;
+          setText(previewText);
         }
         break;
       }
