@@ -245,9 +245,9 @@ function App() {
         if (voiceLangPrefix && voiceLangPrefix !== targetPrefix) {
           // Vocal warning about mismatch
           const warning = new SpeechSynthesisUtterance(
-            `Attenzione: la voce selezionata nel setup è ${selectedVoice.lang}, ma la lingua di destinazione è ${toLang.label}. Cambia la voce nelle impostazioni.`
+            `Warning: the selected voice is ${selectedVoice.lang}, but the target language is ${toLang.label}. Please change the voice in settings.`
           );
-          warning.lang = "it-IT";
+          warning.lang = "en-US";
           warning.rate = 1;
           warning.pitch = 1;
           warning.volume = 1;
