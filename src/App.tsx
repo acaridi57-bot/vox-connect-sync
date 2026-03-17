@@ -281,6 +281,7 @@ function App() {
   }, [fromLang.speechCode, handleTranslate, recognitionSupported, stopSpeaking]);
 
   const handleMicClick = useCallback(() => {
+    console.log('[DEBUG] handleMicClick called, status:', status);
     if (status === "listening") {
       stopListening();
       return;
@@ -457,7 +458,10 @@ function App() {
 
               <TopActionButton
                 ariaLabel="Settings"
-                onClick={() => setShowSettings((prev) => !prev)}
+                onClick={() => {
+                  console.log('[DEBUG] Settings clicked, showSettings:', showSettings);
+                  setShowSettings((prev) => !prev);
+                }}
               >
                 <Settings className="h-[18px] w-[18px]" />
               </TopActionButton>
