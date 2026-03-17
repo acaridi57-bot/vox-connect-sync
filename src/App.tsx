@@ -117,6 +117,11 @@ function App() {
   }, []);
 
   const releaseMicPermission = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    audioContextRef.current?.close();
+    audioContextRef.current = null;
+    analyserRef.current = null;
+    currentAudioLevelRef.current = 0;
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     mediaStreamRef.current = null;
   }, []);
