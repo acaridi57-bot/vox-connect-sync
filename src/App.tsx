@@ -920,6 +920,7 @@ function App() {
         </main>
       </div>
       <SettingsModal />
+      <VoiceSetupModal />
     </div>
   );
 }
