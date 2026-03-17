@@ -376,7 +376,7 @@ function App() {
   const startListening = useCallback(async () => {
     if (!recognitionSupported || typeof window === "undefined") {
       setStatus("error");
-      setErrorText("Speech Recognition non supportato in questo browser.");
+      setErrorText("Speech Recognition is not supported in this browser.");
       return;
     }
 
