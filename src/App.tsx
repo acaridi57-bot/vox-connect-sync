@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -42,6 +43,8 @@ type ConversationItem = {
   to: string;
 };
 
+const SESSION_STORAGE_KEY = "acaridi_translate_session_id";
+
 const languages: Language[] = [
   { code: "it", label: "Italiano", flag: "🇮🇹", speechCode: "it-IT" },
   { code: "en", label: "English", flag: "🇬🇧", speechCode: "en-GB" },
@@ -61,8 +64,71 @@ const languages: Language[] = [
 ];
 
 const createId = () => {
-  const rnd = globalThis.crypto?.randomUUID?.();
-  return rnd ?? `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  if (typeof globalThis !== "undefined" && globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+};
+
+const parseTranslation = (data: any): string => {
+  if (!data) return "";
+  return (
+    data.translation ||
+    data.translated_text ||
+    data.translatedText ||
+    data.result ||
+    data.output ||
+    data.text ||
+    ""
+  );
+};
+
+const normalizeConversation = (data: any): ConversationItem[] => {
+  const rawItems = Array.isArray(data)
+    ? data
+    : data?.conversation || data?.history || data?.messages || data?.items || [];
+
+  if (!Array.isArray(rawItems)) return [];
+
+  return rawItems
+    .map((item: any, index: number) => {
+      const source =
+        item?.source ||
+        item?.original ||
+        item?.input ||
+        item?.text ||
+        item?.message ||
+        item?.user_text ||
+        "";
+      const translated =
+        item?.translated ||
+        item?.translation ||
+        item?.output ||
+        item?.assistant_text ||
+        item?.translated_text ||
+        "";
+      const from =
+        item?.from ||
+        item?.source_lang ||
+        item?.sourceLanguage ||
+        item?.source_language ||
+        "";
+      const to =
+        item?.to ||
+        item?.target_lang ||
+        item?.targetLanguage ||
+        item?.target_language ||
+        "";
+
+      return {
+        id: item?.id || `history_${index}_${createId()}`,
+        source: String(source).trim(),
+        translated: String(translated).trim(),
+        from: String(from).trim(),
+        to: String(to).trim(),
+      };
+    })
+    .filter((item: ConversationItem) => item.source || item.translated);
 };
 
 function App() {
@@ -75,35 +141,26 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
+  const [sessionId, setSessionId] = useState("");
 
   const recognitionRef = useRef<any>(null);
-  const sessionIdRef = useRef<string>(createId());
 
   const canSwap = useMemo(
     () => fromLang.code !== toLang.code,
     [fromLang.code, toLang.code]
   );
 
-  const recognitionSupported = useMemo(
-    () =>
-      typeof window !== "undefined" &&
-      Boolean(window.SpeechRecognition || window.webkitSpeechRecognition),
-    []
-  );
+  const recognitionSupported =
+    typeof window !== "undefined" &&
+    Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 
-  const swapLanguages = () => {
-    if (!canSwap) return;
-    setFromLang(toLang);
-    setToLang(fromLang);
-  };
-
-  const stopSpeaking = () => {
-    if ("speechSynthesis" in window) {
+  const stopSpeaking = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
-  };
+  }, []);
 
-  const stopListening = () => {
+  const stopListening = useCallback(() => {
     try {
       recognitionRef.current?.stop?.();
     } catch {
@@ -112,19 +169,9 @@ function App() {
       recognitionRef.current = null;
       setStatus((prev) => (prev === "listening" ? "idle" : prev));
     }
-  };
+  }, []);
 
-  const clearAll = () => {
-    stopListening();
-    stopSpeaking();
-    setText("");
-    setTranslatedText("");
-    setConversation([]);
-    setErrorText("");
-    setStatus("idle");
-  };
-
-  const getStatusLabel = () => {
+  const getStatusLabel = useCallback(() => {
     switch (status) {
       case "listening":
         return "Listening...";
@@ -137,111 +184,148 @@ function App() {
       default:
         return "Ready";
     }
-  };
+  }, [status]);
 
-  const parseTranslation = (data: any): string => {
-    if (!data) return "";
-    return (
-      data.translation ||
-      data.translated_text ||
-      data.translatedText ||
-      data.result ||
-      data.output ||
-      data.text ||
-      ""
-    );
-  };
+  const speakText = useCallback(
+    (content: string) => {
+      if (
+        !content ||
+        typeof window === "undefined" ||
+        !("speechSynthesis" in window)
+      ) {
+        setStatus("idle");
+        return;
+      }
 
-  const speakText = (content: string) => {
-    if (!content || !("speechSynthesis" in window)) {
-      setStatus("idle");
-      return;
-    }
+      stopSpeaking();
 
-    stopSpeaking();
+      const utterance = new SpeechSynthesisUtterance(content);
+      utterance.lang = toLang.speechCode;
 
-    const utterance = new SpeechSynthesisUtterance(content);
-    utterance.lang = toLang.speechCode;
+      const voices = window.speechSynthesis.getVoices();
+      const exactVoice =
+        voices.find((voice) => voice.lang === toLang.speechCode) ||
+        voices.find((voice) => voice.lang.startsWith(toLang.code));
 
-    const voices = window.speechSynthesis.getVoices();
-    const exactVoice =
-      voices.find((voice) => voice.lang === toLang.speechCode) ||
-      voices.find((voice) => voice.lang.startsWith(toLang.code));
+      if (exactVoice) {
+        utterance.voice = exactVoice;
+      }
 
-    if (exactVoice) utterance.voice = exactVoice;
+      utterance.onstart = () => setStatus("speaking");
+      utterance.onend = () => setStatus("idle");
+      utterance.onerror = () => setStatus("idle");
 
-    utterance.onstart = () => setStatus("speaking");
-    utterance.onend = () => setStatus("idle");
-    utterance.onerror = () => setStatus("idle");
+      window.speechSynthesis.speak(utterance);
+    },
+    [stopSpeaking, toLang.code, toLang.speechCode]
+  );
 
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const handleTranslate = async (inputText: string) => {
-    const cleanText = inputText.trim();
-    if (!cleanText) return;
-
-    setErrorText("");
-    setStatus("translating");
+  const loadConversation = useCallback(async (sid: string) => {
+    if (!sid) return;
 
     try {
-      const response = await fetch("/api/translate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: cleanText,
-          source_lang: fromLang.code,
-          target_lang: toLang.code,
-          sourceLanguage: fromLang.code,
-          targetLanguage: toLang.code,
-          from_language: fromLang.code,
-          to_language: toLang.code,
-          session_id: sessionIdRef.current,
-        }),
-      });
-
-      if (!response.ok) {
-        const raw = await response.text();
-        throw new Error(raw || "Translation request failed");
-      }
+      const response = await fetch(`/api/conversation/${sid}`);
+      if (!response.ok) return;
 
       const data = await response.json();
-      const translated = parseTranslation(data);
+      const items = normalizeConversation(data);
 
-      if (!translated) {
-        throw new Error("No translation returned by /api/translate");
+      if (items.length > 0) {
+        setConversation(items);
+        const last = items[items.length - 1];
+        setText(last.source || "");
+        setTranslatedText(last.translated || "");
       }
-
-      setTranslatedText(translated);
-      setConversation((prev) => [
-        ...prev,
-        {
-          id: createId(),
-          source: cleanText,
-          translated,
-          from: fromLang.label,
-          to: toLang.label,
-        },
-      ]);
-
-      if (autoSpeak) {
-        speakText(translated);
-      } else {
-        setStatus("idle");
-      }
-    } catch (error: any) {
-      console.error(error);
-      setStatus("error");
-      setErrorText(
-        "Traduzione non riuscita. Controlla endpoint /api/translate o payload."
-      );
+    } catch {
+      // se fallisce, amen
     }
-  };
+  }, []);
 
-  const startListening = () => {
-    if (!recognitionSupported) {
+  const handleTranslate = useCallback(
+    async (rawText?: string) => {
+      const cleanText = (rawText ?? text).trim();
+      if (!cleanText) return;
+
+      setErrorText("");
+      setStatus("translating");
+
+      try {
+        const response = await fetch("/api/translate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: cleanText,
+            source_lang: fromLang.code,
+            target_lang: toLang.code,
+            sourceLanguage: fromLang.code,
+            targetLanguage: toLang.code,
+            from_language: fromLang.code,
+            to_language: toLang.code,
+            session_id: sessionId,
+          }),
+        });
+
+        if (!response.ok) {
+          const raw = await response.text();
+          throw new Error(raw || "Translation request failed");
+        }
+
+        const data = await response.json();
+        const translated = parseTranslation(data);
+
+        if (!translated) {
+          throw new Error("No translation returned by /api/translate");
+        }
+
+        setText(cleanText);
+        setTranslatedText(translated);
+
+        setConversation((prev) => [
+          ...prev,
+          {
+            id: createId(),
+            source: cleanText,
+            translated,
+            from: fromLang.label,
+            to: toLang.label,
+          },
+        ]);
+
+        if (autoSpeak) {
+          speakText(translated);
+        } else {
+          setStatus("idle");
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus("error");
+        setErrorText(
+          "Traduzione non riuscita. Controlla endpoint /api/translate o payload."
+        );
+      }
+    },
+    [
+      autoSpeak,
+      fromLang.code,
+      fromLang.label,
+      sessionId,
+      speakText,
+      text,
+      toLang.code,
+      toLang.label,
+    ]
+  );
+
+  const swapLanguages = useCallback(() => {
+    if (!canSwap) return;
+    setFromLang(toLang);
+    setToLang(fromLang);
+  }, [canSwap, fromLang, toLang]);
+
+  const startListening = useCallback(() => {
+    if (!recognitionSupported || typeof window === "undefined") {
       setStatus("error");
       setErrorText("Speech Recognition non supportato in questo browser.");
       return;
@@ -272,8 +356,7 @@ function App() {
     };
 
     recognition.onresult = (event: any) => {
-      const transcript =
-        event?.results?.[0]?.[0]?.transcript?.trim?.() || "";
+      const transcript = event?.results?.[0]?.[0]?.transcript?.trim?.() || "";
       if (!transcript) {
         setStatus("idle");
         return;
@@ -296,25 +379,49 @@ function App() {
     };
 
     recognition.start();
-  };
+  }, [fromLang.speechCode, handleTranslate, recognitionSupported, stopSpeaking]);
 
-  const handleMicClick = () => {
+  const handleMicClick = useCallback(() => {
     if (status === "listening") {
       stopListening();
       return;
     }
     startListening();
-  };
+  }, [startListening, status, stopListening]);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     await handleTranslate(text);
-  };
+  }, [handleTranslate, text]);
 
-  const handleDelete = () => {
-    clearAll();
-  };
+  const handleDelete = useCallback(async () => {
+    stopListening();
+    stopSpeaking();
+    setText("");
+    setTranslatedText("");
+    setConversation([]);
+    setErrorText("");
+    setShowSettings(false);
+    setStatus("idle");
 
-  const handleShare = async () => {
+    if (sessionId) {
+      try {
+        await fetch(`/api/conversation/${sessionId}`, {
+          method: "DELETE",
+        });
+      } catch {
+        // se non cancella lato backend, pazienza
+      }
+    }
+
+    const newSessionId = createId();
+    setSessionId(newSessionId);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
+    }
+  }, [sessionId, stopListening, stopSpeaking]);
+
+  const handleShare = useCallback(async () => {
     const content = translatedText
       ? `Originale: ${text}\nTraduzione: ${translatedText}`
       : text || "Speak & Translate Live";
@@ -339,19 +446,52 @@ function App() {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [text, translatedText]);
 
-  const handleReplayVoice = () => {
+  const handleReplayVoice = useCallback(() => {
     if (!translatedText) return;
     speakText(translatedText);
-  };
+  }, [speakText, translatedText]);
 
-  const onTextareaKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void handleSend();
-    }
-  };
+  const onTextareaKeyDown = useCallback(
+    (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        void handleSend();
+      }
+    },
+    [handleSend]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const stored =
+      localStorage.getItem(SESSION_STORAGE_KEY)?.trim() || createId();
+
+    localStorage.setItem(SESSION_STORAGE_KEY, stored);
+    setSessionId(stored);
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    void loadConversation(sessionId);
+  }, [loadConversation, sessionId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const preloadVoices = () => {
+      window.speechSynthesis.getVoices();
+    };
+
+    preloadVoices();
+    window.speechSynthesis.onvoiceschanged = preloadVoices;
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -374,47 +514,42 @@ function App() {
 
       if (e.key === "Escape") {
         e.preventDefault();
-        handleDelete();
+        void handleDelete();
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  });
-
-  useEffect(() => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.getVoices();
-    }
-  }, []);
+  }, [handleDelete, handleMicClick, handleSend, swapLanguages]);
 
   return (
     <div className="min-h-screen bg-transparent text-[#243428]">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-6 pt-4 sm:max-w-lg">
-        {/* HEADER */}
         <header className="mb-4 rounded-[24px] border border-[#D7E3DA] bg-white/55 px-4 py-4 shadow-[0_8px_24px_rgba(22,42,28,0.08)] backdrop-blur-sm">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1 pr-1">
-              <div className="leading-none text-[#1C6B3B]">
+            <div className="w-[132px] shrink-0">
+              <div className="flex flex-col items-center text-[#1C6B3B]">
                 <div
-                  className="select-none text-[34px] italic tracking-[-0.03em] sm:text-[38px]"
+                  className="select-none text-[30px] leading-none italic tracking-[-0.03em]"
                   style={{
                     fontFamily:
                       '"Brush Script MT","Segoe Script","Apple Chancery","Snell Roundhand",cursive',
+                    fontWeight: 400,
                   }}
                 >
                   ACaridi
                 </div>
 
-                <div className="mt-1 pl-[6px] text-[10px] font-medium uppercase tracking-[0.34em] text-[#2E4B38]">
+                <div className="mt-1 text-center text-[9px] font-medium uppercase tracking-[0.34em] text-[#2E4B38]">
                   Digital App
                 </div>
 
                 <div
-                  className="mt-1 pl-[6px] text-[16px] italic text-[#1C6B3B]"
+                  className="mt-1 text-center text-[14px] italic leading-none text-[#1C6B3B]"
                   style={{
                     fontFamily:
                       '"Times New Roman",Georgia,"Palatino Linotype",serif',
+                    fontWeight: 400,
                   }}
                 >
                   Since 2026
@@ -427,7 +562,7 @@ function App() {
                 <Mic className="h-[18px] w-[18px]" />
               </TopActionButton>
 
-              <TopActionButton ariaLabel="Delete" onClick={handleDelete}>
+              <TopActionButton ariaLabel="Delete" onClick={() => void handleDelete()}>
                 <Trash2 className="h-[18px] w-[18px]" />
               </TopActionButton>
 
@@ -438,14 +573,14 @@ function App() {
                 <Settings className="h-[18px] w-[18px]" />
               </TopActionButton>
 
-              <TopActionButton ariaLabel="Share" onClick={handleShare}>
+              <TopActionButton ariaLabel="Share" onClick={() => void handleShare()}>
                 <Share2 className="h-[18px] w-[18px]" />
               </TopActionButton>
             </div>
           </div>
 
-          <div className="mt-3">
-            <h1 className="truncate text-[18px] font-semibold tracking-[-0.02em] text-[#243428] sm:text-[20px]">
+          <div className="mt-4 flex justify-center">
+            <h1 className="text-center text-[28px] font-semibold leading-tight tracking-[-0.03em] text-[#1C6B3B] sm:text-[32px]">
               Speak &amp; Translate Live
             </h1>
           </div>
@@ -481,7 +616,6 @@ function App() {
           )}
         </header>
 
-        {/* LANGUAGE SELECTORS */}
         <section className="mb-5">
           <div className="flex items-center gap-3">
             <LanguageCard
@@ -515,7 +649,6 @@ function App() {
           </div>
         </section>
 
-        {/* MAIN CONTENT */}
         <main className="flex flex-1 flex-col">
           <section className="flex flex-1 flex-col justify-between rounded-[28px] border border-[#D7E3DA] bg-white/35 px-6 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
             <div>
@@ -596,7 +729,7 @@ function App() {
                       className="rounded-[16px] border border-[#D7E3DA] bg-white/70 p-3"
                     >
                       <p className="text-[12px] text-[#61736A]">
-                        {item.from} → {item.to}
+                        {item.from || fromLang.label} → {item.to || toLang.label}
                       </p>
                       <p className="mt-1 text-[13px] text-[#243428]">
                         {item.source}
@@ -611,7 +744,6 @@ function App() {
             )}
           </section>
 
-          {/* INPUT */}
           <section className="mt-5 border-t border-[#D7E3DA] pt-4">
             <div className="flex items-center gap-3">
               <div className="flex-1 rounded-[18px] border border-[#D7E3DA] bg-white/90 shadow-[0_8px_24px_rgba(22,42,28,0.08)]">
@@ -639,7 +771,6 @@ function App() {
               Enter per inviare · Ctrl/Cmd+Enter invia · Shift+Enter va a capo
             </p>
 
-            {/* MAIN CTA */}
             <div className="mt-6 flex flex-col items-center justify-center">
               <button
                 type="button"
