@@ -39,6 +39,10 @@ type AppState = {
   speechRate: number;
   speechPitch: number;
   userGender: UserGender;
+  eqBass: number;
+  eqMid: number;
+  eqTreble: number;
+  isVoiceSetupOpen: boolean;
   clearMessages: () => void;
   setStatus: (s: AppStatus) => void;
   setSourceLangCode: (code: string) => void;
