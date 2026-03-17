@@ -381,6 +381,9 @@ function App() {
     }
 
     stopSpeaking();
+    dictatedTextRef.current = "";
+    setText("");
+    setTranslatedText("");
     setErrorText("");
     clearRestartTimeout();
 
