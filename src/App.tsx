@@ -531,11 +531,13 @@ function App() {
   }, [startListening]);
 
   const handleSend = useCallback(async () => {
-    // Clean interim brackets before translating
-    const cleanText = text.replace(/\s*\[.*?\]/g, "").trim();
+    const cleanText = (dictatedTextRef.current || text)
+      .replace(/\s*\[.*?\]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!cleanText) return;
 
-    // Stop mic/recognition first
+    stopSpeaking();
     shouldKeepListeningRef.current = false;
     clearRestartTimeout();
     try { recognitionRef.current?.stop?.(); } catch {}
@@ -543,14 +545,15 @@ function App() {
     releaseMicPermission();
     setIsMicEnabled(false);
 
-    // Unlock speech synthesis in user gesture context (needed for mobile)
     const unlockUtterance = new SpeechSynthesisUtterance("");
     unlockUtterance.volume = 0;
     window.speechSynthesis?.speak(unlockUtterance);
 
+    dictatedTextRef.current = cleanText;
     setText(cleanText);
+    setTranslatedText("");
     await handleTranslate(cleanText);
-  }, [clearRestartTimeout, handleTranslate, releaseMicPermission, text]);
+  }, [clearRestartTimeout, handleTranslate, releaseMicPermission, stopSpeaking, text]);
 
   const handleDelete = useCallback(async () => {
     stopListening();
