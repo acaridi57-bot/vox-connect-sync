@@ -4,68 +4,287 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   ACaridi / Speak & Translate Live
+   Palette unica verde brand #1C6B3B
+   Sfondo globale morbido e uniforme
+   ========================================================= */
+
 @layer base {
   :root {
-    --background: 220 27% 97%;
-    --foreground: 220 20% 22%;
+    /* shadcn / tailwind tokens in HSL */
+    --background: 144 33% 98%;
+    --foreground: 135 17% 17%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 22%;
+    --card-foreground: 135 17% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 22%;
+    --popover-foreground: 135 17% 17%;
 
-    --primary: 152 38% 34%;
+    --primary: 145 59% 26%;              /* #1C6B3B */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 94%;
-    --secondary-foreground: 220 20% 22%;
+    --secondary: 145 23% 95%;
+    --secondary-foreground: 135 17% 17%;
 
-    --muted: 220 14% 92%;
-    --muted-foreground: 220 15% 40%;
+    --muted: 145 18% 93%;
+    --muted-foreground: 145 11% 43%;
 
-    --accent: 152 38% 34%;
+    --accent: 145 59% 26%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 87%;
-    --input: 220 13% 87%;
-    --ring: 152 38% 34%;
+    --border: 144 20% 87%;              /* vicino a #D7E3DA */
+    --input: 144 20% 87%;
+    --ring: 145 59% 26%;
 
     --radius: 1rem;
 
-    /* VoxTranslate custom tokens */
-    --vox-primary: 152 38% 34%;
-    --vox-green: 152 38% 34%;
-    --vox-bg: 220 27% 97%;
-    --vox-card: 0 0% 100%;
-    --vox-subtitle: 220 15% 40%;
-    --vox-shadow-card: 0 4px 12px rgba(0,0,0,0.05);
-    --vox-shadow-button: 0 10px 25px rgba(0,0,0,0.1);
-  }
-}
+    /* Brand tokens */
+    --brand-primary: #1C6B3B;
+    --brand-primary-dark: #165330;
+    --brand-primary-soft: rgba(28, 107, 59, 0.10);
 
-@layer base {
+    --brand-text-main: #243428;
+    --brand-text-secondary: #61736A;
+    --brand-text-muted: #7C8B82;
+
+    --brand-border: #D7E3DA;
+    --brand-surface: rgba(255, 255, 255, 0.88);
+    --brand-surface-strong: rgba(255, 255, 255, 0.94);
+
+    --brand-bg-top: #F7FBF8;
+    --brand-bg-middle: #F1F7F3;
+    --brand-bg-bottom: #EAF3ED;
+
+    --brand-shadow-soft: 0 8px 24px rgba(22, 42, 28, 0.08);
+    --brand-shadow-green: 0 4px 10px rgba(28, 107, 59, 0.16);
+    --brand-shadow-cta: 0 14px 32px rgba(28, 107, 59, 0.22);
+
+    /* legacy compat tokens */
+    --vox-primary: 145 59% 26%;
+    --vox-green: 145 59% 26%;
+    --vox-bg: 144 33% 98%;
+    --vox-card: 0 0% 100%;
+    --vox-subtitle: 145 11% 43%;
+    --vox-shadow-card: 0 8px 24px rgba(22, 42, 28, 0.08);
+    --vox-shadow-button: 0 10px 25px rgba(28, 107, 59, 0.18);
+  }
+
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  html {
+    background: linear-gradient(
+      180deg,
+      var(--brand-bg-top) 0%,
+      var(--brand-bg-middle) 52%,
+      var(--brand-bg-bottom) 100%
+    );
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    @apply text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+
+    margin: 0;
+    color: var(--brand-text-main);
+    background:
+      linear-gradient(
+        180deg,
+        var(--brand-bg-top) 0%,
+        var(--brand-bg-middle) 52%,
+        var(--brand-bg-bottom) 100%
+      );
+    background-attachment: fixed;
+  }
+
+  #root {
+    background: transparent;
+  }
+
+  ::selection {
+    background: rgba(28, 107, 59, 0.16);
+    color: var(--brand-text-main);
+  }
+
+  img,
+  svg {
     user-select: none;
-    -webkit-user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  textarea,
+  input,
+  select {
+    color: var(--brand-text-main);
+  }
+
+  textarea::placeholder,
+  input::placeholder {
+    color: var(--brand-text-muted);
+    opacity: 1;
+  }
+}
+
+@layer components {
+  /* pagina / wrapper */
+  .vox-page-bg {
+    background:
+      linear-gradient(
+        180deg,
+        var(--brand-bg-top) 0%,
+        var(--brand-bg-middle) 52%,
+        var(--brand-bg-bottom) 100%
+      );
+  }
+
+  /* superfici morbide sopra lo sfondo */
+  .vox-surface {
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    box-shadow: var(--brand-shadow-soft);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .vox-surface-strong {
+    background: var(--brand-surface-strong);
+    border: 1px solid var(--brand-border);
+    box-shadow: var(--brand-shadow-soft);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* bottoni brand */
+  .vox-action-btn {
+    background: var(--brand-primary);
+    color: #ffffff;
+    border: 1px solid var(--brand-primary);
+    box-shadow: var(--brand-shadow-green);
+    transition: background-color 0.2s ease, transform 0.15s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .vox-action-btn:hover,
+  .vox-action-btn:focus-visible {
+    background: var(--brand-primary-dark);
+  }
+
+  .vox-action-btn:active {
+    transform: scale(0.98);
+  }
+
+  .vox-main-cta {
+    background: var(--brand-primary);
+    color: #ffffff;
+    border: 1px solid var(--brand-primary);
+    box-shadow: var(--brand-shadow-cta);
+    transition: background-color 0.2s ease, transform 0.15s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .vox-main-cta:hover,
+  .vox-main-cta:focus-visible {
+    background: var(--brand-primary-dark);
+  }
+
+  .vox-main-cta:active {
+    transform: scale(0.98);
+  }
+
+  .vox-input-surface {
+    background: rgba(255, 255, 255, 0.90);
+    border: 1px solid var(--brand-border);
+    box-shadow: var(--brand-shadow-soft);
+  }
+
+  .vox-card-soft {
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid var(--brand-border);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  /* logo */
+  .vox-logo-signature {
+    color: var(--brand-primary);
+    font-family: "Brush Script MT", "Segoe Script", "Apple Chancery",
+      "Snell Roundhand", cursive;
+    font-style: italic;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+  }
+
+  .vox-logo-caption {
+    color: #2E4B38;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.34em;
+  }
+
+  .vox-logo-since {
+    color: var(--brand-primary);
+    font-family: "Times New Roman", Georgia, "Palatino Linotype", serif;
+    font-style: italic;
+  }
+
+  /* testo */
+  .vox-text-main {
+    color: var(--brand-text-main);
+  }
+
+  .vox-text-secondary {
+    color: var(--brand-text-secondary);
+  }
+
+  .vox-text-muted {
+    color: var(--brand-text-muted);
+  }
+
+  /* header safety: evita tagli logo */
+  .vox-header-safe {
+    overflow: visible;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .vox-logo-safe {
+    overflow: visible;
+    padding-bottom: 0.2rem;
   }
 }
 
 @layer utilities {
   .vox-gradient-text {
-    background: linear-gradient(135deg, hsl(145 77% 46%) 0%, hsl(160 100% 39%) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--brand-primary) 0%,
+      #2A7A45 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -77,5 +296,51 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bg-vox-page {
+    background:
+      linear-gradient(
+        180deg,
+        var(--brand-bg-top) 0%,
+        var(--brand-bg-middle) 52%,
+        var(--brand-bg-bottom) 100%
+      );
+  }
+
+  .text-vox-main {
+    color: var(--brand-text-main);
+  }
+
+  .text-vox-secondary {
+    color: var(--brand-text-secondary);
+  }
+
+  .text-vox-muted {
+    color: var(--brand-text-muted);
+  }
+
+  .border-vox {
+    border-color: var(--brand-border);
+  }
+
+  .bg-vox-surface {
+    background: var(--brand-surface);
+  }
+
+  .bg-vox-surface-strong {
+    background: var(--brand-surface-strong);
+  }
+
+  .shadow-vox-soft {
+    box-shadow: var(--brand-shadow-soft);
+  }
+
+  .shadow-vox-green {
+    box-shadow: var(--brand-shadow-green);
+  }
+
+  .shadow-vox-cta {
+    box-shadow: var(--brand-shadow-cta);
   }
 }
