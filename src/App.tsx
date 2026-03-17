@@ -982,7 +982,7 @@ function App() {
               )}
 
               <p className="mt-4 max-w-[300px] text-center text-[15px] leading-relaxed text-[#4E6358]">
-                {isMicEnabled ? "Ascolto attivo — tocca per fermare" : "Tocca il microfono per avviare la traduzione vocale"}
+                {isMicEnabled ? "Listening — tap to stop" : "Tap the microphone to start voice translation"}
               </p>
 
               {!recognitionSupported && (
