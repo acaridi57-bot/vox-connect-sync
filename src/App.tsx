@@ -305,18 +305,19 @@ function App() {
 
   const handleTranslate = useCallback(
     async (rawText?: string) => {
-      const cleanText = (rawText ?? text).trim();
+      const cleanText = (rawText ?? text)
+        .replace(/\s*\[.*?\]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
       if (!cleanText) return;
 
+      dictatedTextRef.current = cleanText;
       setErrorText("");
+      setTranslatedText("");
       setStatus("translating");
 
       try {
         const translated = await translateText(cleanText, fromLang.code, toLang.code);
-
-        if (!translated || translated === cleanText) {
-          throw new Error("No translation returned");
-        }
 
         setText(cleanText);
         setTranslatedText(translated);
