@@ -347,7 +347,7 @@ function App() {
         console.error(error);
         setStatus("error");
         setErrorText(
-          "Traduzione non riuscita. Riprova tra qualche secondo."
+          "Translation failed. Please try again in a few seconds."
         );
         if (isMicEnabled && shouldKeepListeningRef.current) {
           scheduleRestartListening();
