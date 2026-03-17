@@ -525,9 +525,23 @@ function App() {
     // Clean interim brackets before translating
     const cleanText = text.replace(/\s*\[.*?\]/g, "").trim();
     if (!cleanText) return;
+
+    // Stop mic/recognition first
+    shouldKeepListeningRef.current = false;
+    clearRestartTimeout();
+    try { recognitionRef.current?.stop?.(); } catch {}
+    recognitionRef.current = null;
+    releaseMicPermission();
+    setIsMicEnabled(false);
+
+    // Unlock speech synthesis in user gesture context (needed for mobile)
+    const unlockUtterance = new SpeechSynthesisUtterance("");
+    unlockUtterance.volume = 0;
+    window.speechSynthesis?.speak(unlockUtterance);
+
     setText(cleanText);
     await handleTranslate(cleanText);
-  }, [handleTranslate, text]);
+  }, [clearRestartTimeout, handleTranslate, releaseMicPermission, text]);
 
   const handleDelete = useCallback(async () => {
     stopListening();
