@@ -71,67 +71,6 @@ const createId = () => {
   return `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 };
 
-const parseTranslation = (data: any): string => {
-  if (!data) return "";
-  return (
-    data.translation ||
-    data.translated_text ||
-    data.translatedText ||
-    data.result ||
-    data.output ||
-    data.text ||
-    ""
-  );
-};
-
-const normalizeConversation = (data: any): ConversationItem[] => {
-  const rawItems = Array.isArray(data)
-    ? data
-    : data?.conversation || data?.history || data?.messages || data?.items || [];
-
-  if (!Array.isArray(rawItems)) return [];
-
-  return rawItems
-    .map((item: any, index: number) => {
-      const source =
-        item?.source ||
-        item?.original ||
-        item?.input ||
-        item?.text ||
-        item?.message ||
-        item?.user_text ||
-        "";
-      const translated =
-        item?.translated ||
-        item?.translation ||
-        item?.output ||
-        item?.assistant_text ||
-        item?.translated_text ||
-        "";
-      const from =
-        item?.from ||
-        item?.source_lang ||
-        item?.sourceLanguage ||
-        item?.source_language ||
-        "";
-      const to =
-        item?.to ||
-        item?.target_lang ||
-        item?.targetLanguage ||
-        item?.target_language ||
-        "";
-
-      return {
-        id: item?.id || `history_${index}_${createId()}`,
-        source: String(source).trim(),
-        translated: String(translated).trim(),
-        from: String(from).trim(),
-        to: String(to).trim(),
-      };
-    })
-    .filter((item: ConversationItem) => item.source || item.translated);
-};
-
 function App() {
   const [fromLang, setFromLang] = useState<Language>(languages[0]);
   const [toLang, setToLang] = useState<Language>(languages[1]);
