@@ -1,4 +1,12 @@
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEventHandler,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import {
   ArrowRightLeft,
   ChevronDown,
@@ -7,33 +15,80 @@ import {
   Settings,
   Share2,
   Trash2,
+  Volume2,
 } from "lucide-react";
+
+declare global {
+  interface Window {
+    webkitSpeechRecognition?: any;
+    SpeechRecognition?: any;
+  }
+}
 
 type Language = {
   code: string;
   label: string;
   flag: string;
+  speechCode: string;
+};
+
+type Status = "idle" | "listening" | "translating" | "speaking" | "error";
+
+type ConversationItem = {
+  id: string;
+  source: string;
+  translated: string;
+  from: string;
+  to: string;
 };
 
 const languages: Language[] = [
-  { code: "it", label: "Italiano", flag: "🇮🇹" },
-  { code: "en", label: "English", flag: "🇬🇧" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "fr", label: "Français", flag: "🇫🇷" },
-  { code: "de", label: "Deutsch", flag: "🇩🇪" },
-  { code: "pt", label: "Português", flag: "🇵🇹" },
-  { code: "zh", label: "中文", flag: "🇨🇳" },
-  { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "it", label: "Italiano", flag: "🇮🇹", speechCode: "it-IT" },
+  { code: "en", label: "English", flag: "🇬🇧", speechCode: "en-GB" },
+  { code: "es", label: "Español", flag: "🇪🇸", speechCode: "es-ES" },
+  { code: "fr", label: "Français", flag: "🇫🇷", speechCode: "fr-FR" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪", speechCode: "de-DE" },
+  { code: "pt", label: "Português", flag: "🇵🇹", speechCode: "pt-PT" },
+  { code: "ru", label: "Русский", flag: "🇷🇺", speechCode: "ru-RU" },
+  { code: "ar", label: "العربية", flag: "🇸🇦", speechCode: "ar-SA" },
+  { code: "zh", label: "中文", flag: "🇨🇳", speechCode: "zh-CN" },
+  { code: "ja", label: "日本語", flag: "🇯🇵", speechCode: "ja-JP" },
+  { code: "ko", label: "한국어", flag: "🇰🇷", speechCode: "ko-KR" },
+  { code: "hi", label: "हिन्दी", flag: "🇮🇳", speechCode: "hi-IN" },
+  { code: "nl", label: "Nederlands", flag: "🇳🇱", speechCode: "nl-NL" },
+  { code: "pl", label: "Polski", flag: "🇵🇱", speechCode: "pl-PL" },
+  { code: "tr", label: "Türkçe", flag: "🇹🇷", speechCode: "tr-TR" },
 ];
+
+const createId = () => {
+  const rnd = globalThis.crypto?.randomUUID?.();
+  return rnd ?? `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+};
 
 function App() {
   const [fromLang, setFromLang] = useState<Language>(languages[0]);
   const [toLang, setToLang] = useState<Language>(languages[1]);
   const [text, setText] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [status, setStatus] = useState<Status>("idle");
+  const [errorText, setErrorText] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [conversation, setConversation] = useState<ConversationItem[]>([]);
+
+  const recognitionRef = useRef<any>(null);
+  const sessionIdRef = useRef<string>(createId());
 
   const canSwap = useMemo(
     () => fromLang.code !== toLang.code,
     [fromLang.code, toLang.code]
+  );
+
+  const recognitionSupported = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      Boolean(window.SpeechRecognition || window.webkitSpeechRecognition),
+    []
   );
 
   const swapLanguages = () => {
@@ -42,8 +97,299 @@ function App() {
     setToLang(fromLang);
   };
 
+  const stopSpeaking = () => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
+  const stopListening = () => {
+    try {
+      recognitionRef.current?.stop?.();
+    } catch {
+      // niente
+    } finally {
+      recognitionRef.current = null;
+      setStatus((prev) => (prev === "listening" ? "idle" : prev));
+    }
+  };
+
+  const clearAll = () => {
+    stopListening();
+    stopSpeaking();
+    setText("");
+    setTranslatedText("");
+    setConversation([]);
+    setErrorText("");
+    setStatus("idle");
+  };
+
+  const getStatusLabel = () => {
+    switch (status) {
+      case "listening":
+        return "Listening...";
+      case "translating":
+        return "Translating...";
+      case "speaking":
+        return "Speaking...";
+      case "error":
+        return "Error";
+      default:
+        return "Ready";
+    }
+  };
+
+  const parseTranslation = (data: any): string => {
+    if (!data) return "";
+    return (
+      data.translation ||
+      data.translated_text ||
+      data.translatedText ||
+      data.result ||
+      data.output ||
+      data.text ||
+      ""
+    );
+  };
+
+  const speakText = (content: string) => {
+    if (!content || !("speechSynthesis" in window)) {
+      setStatus("idle");
+      return;
+    }
+
+    stopSpeaking();
+
+    const utterance = new SpeechSynthesisUtterance(content);
+    utterance.lang = toLang.speechCode;
+
+    const voices = window.speechSynthesis.getVoices();
+    const exactVoice =
+      voices.find((voice) => voice.lang === toLang.speechCode) ||
+      voices.find((voice) => voice.lang.startsWith(toLang.code));
+
+    if (exactVoice) utterance.voice = exactVoice;
+
+    utterance.onstart = () => setStatus("speaking");
+    utterance.onend = () => setStatus("idle");
+    utterance.onerror = () => setStatus("idle");
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleTranslate = async (inputText: string) => {
+    const cleanText = inputText.trim();
+    if (!cleanText) return;
+
+    setErrorText("");
+    setStatus("translating");
+
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: cleanText,
+          source_lang: fromLang.code,
+          target_lang: toLang.code,
+          sourceLanguage: fromLang.code,
+          targetLanguage: toLang.code,
+          from_language: fromLang.code,
+          to_language: toLang.code,
+          session_id: sessionIdRef.current,
+        }),
+      });
+
+      if (!response.ok) {
+        const raw = await response.text();
+        throw new Error(raw || "Translation request failed");
+      }
+
+      const data = await response.json();
+      const translated = parseTranslation(data);
+
+      if (!translated) {
+        throw new Error("No translation returned by /api/translate");
+      }
+
+      setTranslatedText(translated);
+      setConversation((prev) => [
+        ...prev,
+        {
+          id: createId(),
+          source: cleanText,
+          translated,
+          from: fromLang.label,
+          to: toLang.label,
+        },
+      ]);
+
+      if (autoSpeak) {
+        speakText(translated);
+      } else {
+        setStatus("idle");
+      }
+    } catch (error: any) {
+      console.error(error);
+      setStatus("error");
+      setErrorText(
+        "Traduzione non riuscita. Controlla endpoint /api/translate o payload."
+      );
+    }
+  };
+
+  const startListening = () => {
+    if (!recognitionSupported) {
+      setStatus("error");
+      setErrorText("Speech Recognition non supportato in questo browser.");
+      return;
+    }
+
+    stopSpeaking();
+    setErrorText("");
+
+    const SpeechRecognitionCtor =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognitionCtor) {
+      setStatus("error");
+      setErrorText("Speech Recognition non disponibile.");
+      return;
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    recognitionRef.current = recognition;
+
+    recognition.lang = fromLang.speechCode;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setStatus("listening");
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript =
+        event?.results?.[0]?.[0]?.transcript?.trim?.() || "";
+      if (!transcript) {
+        setStatus("idle");
+        return;
+      }
+
+      setText(transcript);
+      void handleTranslate(transcript);
+    };
+
+    recognition.onerror = () => {
+      setStatus("error");
+      setErrorText("Errore durante il riconoscimento vocale.");
+    };
+
+    recognition.onend = () => {
+      recognitionRef.current = null;
+      setStatus((prev) =>
+        prev === "listening" ? "idle" : prev === "error" ? "error" : prev
+      );
+    };
+
+    recognition.start();
+  };
+
+  const handleMicClick = () => {
+    if (status === "listening") {
+      stopListening();
+      return;
+    }
+    startListening();
+  };
+
+  const handleSend = async () => {
+    await handleTranslate(text);
+  };
+
+  const handleDelete = () => {
+    clearAll();
+  };
+
+  const handleShare = async () => {
+    const content = translatedText
+      ? `Originale: ${text}\nTraduzione: ${translatedText}`
+      : text || "Speak & Translate Live";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Speak & Translate Live",
+          text: content,
+          url: window.location.href,
+        });
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(content);
+        alert("Testo copiato negli appunti");
+        return;
+      }
+
+      alert(content);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleReplayVoice = () => {
+    if (!translatedText) return;
+    speakText(translatedText);
+  };
+
+  const onTextareaKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void handleSend();
+    }
+  };
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const meta = e.ctrlKey || e.metaKey;
+
+      if (meta && e.key.toLowerCase() === "m") {
+        e.preventDefault();
+        handleMicClick();
+      }
+
+      if (meta && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        swapLanguages();
+      }
+
+      if (meta && e.key === "Enter") {
+        e.preventDefault();
+        void handleSend();
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleDelete();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
+  useEffect(() => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.getVoices();
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#F7FBF8_0%,#F1F7F3_52%,#EAF3ED_100%)] text-[#243428]">
+    <div className="min-h-screen bg-transparent text-[#243428]">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-6 pt-4 sm:max-w-lg">
         {/* HEADER */}
         <header className="mb-4 rounded-[24px] border border-[#D7E3DA] bg-white/55 px-4 py-4 shadow-[0_8px_24px_rgba(22,42,28,0.08)] backdrop-blur-sm">
@@ -77,20 +423,23 @@ function App() {
             </div>
 
             <div className="grid shrink-0 grid-cols-4 gap-2">
-              <TopActionButton ariaLabel="Voice">
-                <Mic className="h-4.5 w-4.5" />
+              <TopActionButton ariaLabel="Voice" onClick={handleMicClick}>
+                <Mic className="h-[18px] w-[18px]" />
               </TopActionButton>
 
-              <TopActionButton ariaLabel="Delete">
-                <Trash2 className="h-4.5 w-4.5" />
+              <TopActionButton ariaLabel="Delete" onClick={handleDelete}>
+                <Trash2 className="h-[18px] w-[18px]" />
               </TopActionButton>
 
-              <TopActionButton ariaLabel="Settings">
-                <Settings className="h-4.5 w-4.5" />
+              <TopActionButton
+                ariaLabel="Settings"
+                onClick={() => setShowSettings((prev) => !prev)}
+              >
+                <Settings className="h-[18px] w-[18px]" />
               </TopActionButton>
 
-              <TopActionButton ariaLabel="Share">
-                <Share2 className="h-4.5 w-4.5" />
+              <TopActionButton ariaLabel="Share" onClick={handleShare}>
+                <Share2 className="h-[18px] w-[18px]" />
               </TopActionButton>
             </div>
           </div>
@@ -100,6 +449,36 @@ function App() {
               Speak &amp; Translate Live
             </h1>
           </div>
+
+          {showSettings && (
+            <div className="mt-3 rounded-[18px] border border-[#D7E3DA] bg-white/85 p-3 shadow-[0_8px_24px_rgba(22,42,28,0.08)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[14px] font-semibold text-[#243428]">
+                    Auto voice playback
+                  </p>
+                  <p className="text-[12px] text-[#61736A]">
+                    Legge la traduzione appena arriva
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAutoSpeak((prev) => !prev)}
+                  className={`relative h-7 w-12 rounded-full transition ${
+                    autoSpeak ? "bg-[#1C6B3B]" : "bg-[#CAD8CE]"
+                  }`}
+                  aria-label="Toggle auto voice playback"
+                >
+                  <span
+                    className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                      autoSpeak ? "left-6" : "left-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* LANGUAGE SELECTORS */}
@@ -138,16 +517,98 @@ function App() {
 
         {/* MAIN CONTENT */}
         <main className="flex flex-1 flex-col">
-          <section className="flex flex-1 items-center justify-center rounded-[28px] border border-[#D7E3DA] bg-white/35 px-6 py-10 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-            <div className="max-w-xs">
-              <h2 className="text-[20px] font-semibold leading-snug text-[#2A4A35]">
-                Tap the microphone to start translating
-              </h2>
-              <p className="mt-3 text-[15px] leading-relaxed text-[#61736A]">
-                Speak naturally — Speak &amp; Translate Live will detect and
-                translate in real-time
-              </p>
+          <section className="flex flex-1 flex-col justify-between rounded-[28px] border border-[#D7E3DA] bg-white/35 px-6 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+            <div>
+              <div className="mb-4 flex items-center justify-center">
+                <span
+                  className={`rounded-full px-3 py-1 text-[12px] font-medium ${
+                    status === "error"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-[rgba(28,107,59,0.10)] text-[#1C6B3B]"
+                  }`}
+                >
+                  {getStatusLabel()}
+                </span>
+              </div>
+
+              {!translatedText ? (
+                <div className="mx-auto max-w-xs">
+                  <h2 className="text-[20px] font-semibold leading-snug text-[#2A4A35]">
+                    Tap the microphone to start translating
+                  </h2>
+                  <p className="mt-3 text-[15px] leading-relaxed text-[#61736A]">
+                    Speak naturally — Speak &amp; Translate Live will detect and
+                    translate in real-time
+                  </p>
+                </div>
+              ) : (
+                <div className="mx-auto max-w-sm text-left">
+                  <div className="rounded-[20px] border border-[#D7E3DA] bg-white/80 p-4 shadow-[0_8px_24px_rgba(22,42,28,0.08)]">
+                    <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-[#61736A]">
+                      {fromLang.label}
+                    </p>
+                    <p className="text-[15px] leading-relaxed text-[#243428]">
+                      {text}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 rounded-[20px] border border-[#D7E3DA] bg-[rgba(255,255,255,0.92)] p-4 shadow-[0_8px_24px_rgba(22,42,28,0.08)]">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#61736A]">
+                        {toLang.label}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={handleReplayVoice}
+                        className="flex items-center gap-1 rounded-full border border-[#D7E3DA] bg-white px-2 py-1 text-[12px] text-[#1C6B3B]"
+                        aria-label="Play translated audio"
+                      >
+                        <Volume2 className="h-3.5 w-3.5" />
+                        Listen
+                      </button>
+                    </div>
+
+                    <p className="text-[17px] font-medium leading-relaxed text-[#243428]">
+                      {translatedText}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {errorText && (
+                <p className="mx-auto mt-4 max-w-sm text-[13px] text-red-600">
+                  {errorText}
+                </p>
+              )}
             </div>
+
+            {conversation.length > 0 && (
+              <div className="mt-5 text-left">
+                <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-[#61736A]">
+                  Recent history
+                </p>
+
+                <div className="space-y-2">
+                  {conversation.slice(-3).reverse().map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-[16px] border border-[#D7E3DA] bg-white/70 p-3"
+                    >
+                      <p className="text-[12px] text-[#61736A]">
+                        {item.from} → {item.to}
+                      </p>
+                      <p className="mt-1 text-[13px] text-[#243428]">
+                        {item.source}
+                      </p>
+                      <p className="mt-1 text-[14px] font-medium text-[#1C6B3B]">
+                        {item.translated}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           {/* INPUT */}
@@ -157,6 +618,7 @@ function App() {
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
+                  onKeyDown={onTextareaKeyDown}
                   rows={1}
                   placeholder="Scrivi un testo da tradurre..."
                   className="min-h-[52px] w-full resize-none bg-transparent px-4 py-3 text-[16px] text-[#243428] outline-none placeholder:text-[#7C8B82]"
@@ -165,6 +627,7 @@ function App() {
 
               <button
                 type="button"
+                onClick={() => void handleSend()}
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_4px_10px_rgba(28,107,59,0.16)] transition hover:bg-[#165330] active:scale-[0.98]"
                 aria-label="Send text"
               >
@@ -173,13 +636,14 @@ function App() {
             </div>
 
             <p className="mt-2 px-1 text-[13px] text-[#6E7E75]">
-              Enter per inviare · Shift+Enter per a capo
+              Enter per inviare · Ctrl/Cmd+Enter invia · Shift+Enter va a capo
             </p>
 
             {/* MAIN CTA */}
             <div className="mt-6 flex flex-col items-center justify-center">
               <button
                 type="button"
+                onClick={handleMicClick}
                 className="flex h-28 w-28 items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] transition hover:bg-[#165330] active:scale-[0.98]"
                 aria-label="Start voice translation"
               >
@@ -190,6 +654,12 @@ function App() {
                 Speak naturally — Speak &amp; Translate Live listens and
                 translates
               </p>
+
+              {!recognitionSupported && (
+                <p className="mt-2 text-center text-[12px] text-red-600">
+                  Questo browser non supporta il riconoscimento vocale nativo.
+                </p>
+              )}
             </div>
           </section>
         </main>
@@ -201,13 +671,16 @@ function App() {
 function TopActionButton({
   children,
   ariaLabel,
+  onClick,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   ariaLabel: string;
+  onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       aria-label={ariaLabel}
       className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_4px_10px_rgba(28,107,59,0.16)] transition hover:bg-[#165330] active:scale-[0.98]"
     >
@@ -221,7 +694,7 @@ function LanguageCard({
   onChange,
 }: {
   value: Language;
-  onChange: React.ChangeEventHandler<HTMLSelectElement>;
+  onChange: ChangeEventHandler<HTMLSelectElement>;
 }) {
   return (
     <label className="relative block flex-1">
