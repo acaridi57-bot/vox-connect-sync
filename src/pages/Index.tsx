@@ -34,12 +34,14 @@ export default function Index() {
     if (isMuted) { resumeMic(); setIsMuted(false); } else { pauseMic(); setIsMuted(true); }
   }, [isMuted, pauseMic, resumeMic]);
 
-  const handleLogout = useCallback(() => {
-    window.speechSynthesis?.cancel();
-    stopRecognition(); stopMic(); clearMessages();
-    useAppStore.getState().setStatus("idle");
-    window.location.reload();
-  }, [stopRecognition, stopMic, clearMessages]);
+  const handleShare = useCallback(async () => {
+    if (navigator.share) {
+      await navigator.share({ title: "Speak & Translate Live", text: "Traduci in tempo reale!", url: window.location.href });
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      alert("Link copiato!");
+    }
+  }, []);
 
   const handleSendText = useCallback(async () => {
     const text = inputText.trim();
