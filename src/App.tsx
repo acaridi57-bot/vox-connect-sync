@@ -191,7 +191,7 @@ function App() {
   }, []);
 
   const getStatusLabel = useCallback(() => {
-    if (!isMicEnabled) return "Microfono spento";
+    if (!isMicEnabled) return "Microphone off";
     switch (status) {
       case "listening":
         return "Listening...";
@@ -202,7 +202,7 @@ function App() {
       case "error":
         return "Error";
       default:
-        return "Microfono attivo";
+        return "Microphone on";
     }
   }, [isMicEnabled, status]);
 
@@ -245,9 +245,9 @@ function App() {
         if (voiceLangPrefix && voiceLangPrefix !== targetPrefix) {
           // Vocal warning about mismatch
           const warning = new SpeechSynthesisUtterance(
-            `Attenzione: la voce selezionata nel setup è ${selectedVoice.lang}, ma la lingua di destinazione è ${toLang.label}. Cambia la voce nelle impostazioni.`
+            `Warning: the selected voice is ${selectedVoice.lang}, but the target language is ${toLang.label}. Please change the voice in settings.`
           );
-          warning.lang = "it-IT";
+          warning.lang = "en-US";
           warning.rate = 1;
           warning.pitch = 1;
           warning.volume = 1;
@@ -347,7 +347,7 @@ function App() {
         console.error(error);
         setStatus("error");
         setErrorText(
-          "Traduzione non riuscita. Riprova tra qualche secondo."
+          "Translation failed. Please try again in a few seconds."
         );
         if (isMicEnabled && shouldKeepListeningRef.current) {
           scheduleRestartListening();
@@ -376,7 +376,7 @@ function App() {
   const startListening = useCallback(async () => {
     if (!recognitionSupported || typeof window === "undefined") {
       setStatus("error");
-      setErrorText("Speech Recognition non supportato in questo browser.");
+      setErrorText("Speech Recognition is not supported in this browser.");
       return;
     }
 
@@ -398,8 +398,8 @@ function App() {
       setStatus("error");
       setErrorText(
         permissionDenied
-          ? "Permesso microfono negato dal dispositivo."
-          : "Impossibile accedere al microfono del dispositivo."
+          ? "Microphone permission denied by the device."
+          : "Unable to access the device microphone."
       );
       return;
     }
@@ -413,7 +413,7 @@ function App() {
 
     if (!SpeechRecognitionCtor) {
       setStatus("error");
-      setErrorText("Speech Recognition non disponibile.");
+      setErrorText("Speech Recognition not available.");
       return;
     }
 
@@ -474,12 +474,12 @@ function App() {
         shouldKeepListeningRef.current = false;
         releaseMicPermission();
         setStatus("error");
-        setErrorText("Permesso microfono negato dal dispositivo.");
+        setErrorText("Microphone permission denied by the device.");
         return;
       }
 
       setStatus("error");
-      setErrorText("Errore durante il riconoscimento vocale.");
+      setErrorText("Error during voice recognition.");
       if (shouldKeepListeningRef.current) {
         scheduleRestartListening();
       }
@@ -501,7 +501,7 @@ function App() {
       console.error(error);
       recognitionRef.current = null;
       setStatus("error");
-      setErrorText("Impossibile avviare l'ascolto vocale.");
+      setErrorText("Unable to start voice listening.");
     }
   }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
@@ -594,7 +594,7 @@ function App() {
 
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(content);
-        alert("Testo copiato negli appunti");
+        alert("Text copied to clipboard");
         return;
       }
 
@@ -813,10 +813,10 @@ function App() {
               {!translatedText ? (
                 <div className="mx-auto max-w-xs">
                   <h2 className="text-[20px] font-semibold leading-snug text-[#2A4A35]">
-                    Premi il microfono grande per parlare e tradurre
+                    Press the microphone to speak, then tap TRANSLATE
                   </h2>
                   <p className="mt-3 text-[15px] leading-relaxed text-[#61736A]">
-                    Il tasto piccolo 🎙️ apre il setup voce · Premi di nuovo il grande per fermare
+                    The small 🎙️ button opens voice setup · Press the big mic again to stop
                   </p>
                 </div>
               ) : (
@@ -905,7 +905,7 @@ function App() {
                   }}
                   onKeyDown={onTextareaKeyDown}
                   rows={1}
-                  placeholder="Scrivi un testo da tradurre..."
+                  placeholder="Type text to translate..."
                   className="min-h-[52px] w-full resize-none bg-transparent px-4 py-3 text-[16px] text-[#243428] outline-none placeholder:text-[#7C8B82]"
                 />
               </div>
@@ -921,7 +921,7 @@ function App() {
             </div>
 
             <p className="mt-2 px-1 text-[13px] text-[#6E7E75]">
-              Enter per inviare · Ctrl/Cmd+Enter invia · Shift+Enter va a capo
+              Enter to send · Ctrl/Cmd+Enter send · Shift+Enter new line
             </p>
 
             <div className="mt-6 flex flex-col items-center justify-center">
@@ -961,10 +961,10 @@ function App() {
                   type="button"
                   onClick={() => void handleSend()}
                   className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border-2 border-[#1C6B3B] bg-white text-[#1C6B3B] shadow-[0_14px_32px_rgba(28,107,59,0.12)] transition hover:bg-[#F4F8F5] active:scale-[0.98]"
-                  aria-label="Traduci testo"
+                  aria-label="Translate text"
                 >
                   <Languages className="h-10 w-10" strokeWidth={1.8} />
-                  <span className="mt-1 text-[13px] font-bold tracking-wide">TRADUCI</span>
+                  <span className="mt-1 text-[13px] font-bold tracking-wide">TRANSLATE</span>
                 </button>
               </div>
 
@@ -982,7 +982,7 @@ function App() {
               )}
 
               <p className="mt-4 max-w-[300px] text-center text-[15px] leading-relaxed text-[#4E6358]">
-                {isMicEnabled ? "Ascolto attivo — tocca per fermare" : "Tocca il microfono per avviare la traduzione vocale"}
+                {isMicEnabled ? "Listening — tap to stop" : "Tap the microphone to start voice translation"}
               </p>
 
               {!recognitionSupported && (
