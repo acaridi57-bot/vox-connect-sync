@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 22%;
 
-    --primary: 145 77% 46%;
+    --primary: 152 38% 34%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 20% 94%;
@@ -24,7 +24,7 @@
     --muted: 220 14% 92%;
     --muted-foreground: 220 15% 40%;
 
-    --accent: 145 77% 46%;
+    --accent: 152 38% 34%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -32,13 +32,13 @@
 
     --border: 220 13% 87%;
     --input: 220 13% 87%;
-    --ring: 145 77% 46%;
+    --ring: 152 38% 34%;
 
     --radius: 1rem;
 
     /* VoxTranslate custom tokens */
-    --vox-primary: 145 77% 46%;
-    --vox-green: 145 77% 46%;
+    --vox-primary: 152 38% 34%;
+    --vox-green: 152 38% 34%;
     --vox-bg: 220 27% 97%;
     --vox-card: 0 0% 100%;
     --vox-subtitle: 220 15% 40%;

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import acaridiLogo from "@/assets/acaridi-logo.png";
 import { Mic, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
@@ -7,10 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AnimatePresence, motion } from "framer-motion";
 
 export const VoxLogo = () => (
-  <div className="flex flex-col leading-none">
-    <span className="text-lg font-bold italic text-primary">ACaridi</span>
-    <span className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase">Digital App</span>
-  </div>
+  <img src={acaridiLogo} alt="ACaridi Digital App" className="h-10 w-auto" />
 );
 
 const LANGS = [
