@@ -281,6 +281,7 @@ function App() {
   }, [fromLang.speechCode, handleTranslate, recognitionSupported, stopSpeaking]);
 
   const handleMicClick = useCallback(() => {
+    console.log('[DEBUG] handleMicClick called, status:', status);
     if (status === "listening") {
       stopListening();
       return;
