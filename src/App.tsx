@@ -184,11 +184,6 @@ function App() {
     return stream;
   }, [startAudioMonitor]);
 
-  const getSensitivityThreshold = useCallback(() => {
-    const sensitivity = useAppStore.getState().sensitivity;
-    // sensitivity 0 = very high threshold (hard to trigger), 100 = very low threshold (easy to trigger)
-    return (100 - sensitivity) / 100 * 0.3 + 0.02;
-  }, []);
 
   const getStatusLabel = useCallback(() => {
     if (!isMicEnabled) return "Microphone off";
