@@ -21,6 +21,7 @@ import {
 import { translateText } from "@/lib/speech/demoTranslations";
 import { useAppStore } from "@/store/useAppStore";
 import { SettingsModal } from "@/components/vox/VoxUnified";
+import { VoiceSetupModal } from "@/components/vox/VoiceSetupModal";
 
 declare global {
   interface Window {
