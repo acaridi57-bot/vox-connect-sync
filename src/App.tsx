@@ -878,11 +878,11 @@ function App() {
             </p>
 
             <div className="mt-6 flex flex-col items-center justify-center">
-              <div className="relative flex items-center justify-center">
-                {/* Audio level ring */}
+              <div className="relative flex items-center justify-center gap-6">
+                {/* Audio level ring on mic button */}
                 {status === "listening" && audioLevel > 0.05 && (
                   <div
-                    className="absolute rounded-full border-[3px] border-[#1C6B3B] pointer-events-none transition-transform duration-75"
+                    className="absolute left-1/2 -translate-x-[calc(50%+3.25rem)] rounded-full border-[3px] border-[#1C6B3B] pointer-events-none transition-transform duration-75"
                     style={{
                       width: `${112 + audioLevel * 48}px`,
                       height: `${112 + audioLevel * 48}px`,
@@ -890,16 +890,8 @@ function App() {
                     }}
                   />
                 )}
-                {status === "listening" && audioLevel > 0.15 && (
-                  <div
-                    className="absolute rounded-full border-2 border-[#1C6B3B]/30 pointer-events-none transition-transform duration-100"
-                    style={{
-                      width: `${112 + audioLevel * 80}px`,
-                      height: `${112 + audioLevel * 80}px`,
-                      opacity: audioLevel * 0.35,
-                    }}
-                  />
-                )}
+
+                {/* Big mic button */}
                 <button
                   type="button"
                   onClick={() => void handleBigMicToggle()}
@@ -915,6 +907,17 @@ function App() {
                   ) : (
                     <Mic className="h-12 w-12" strokeWidth={1.8} />
                   )}
+                </button>
+
+                {/* Big TRADUCI button — same size as mic */}
+                <button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border-2 border-[#1C6B3B] bg-white text-[#1C6B3B] shadow-[0_14px_32px_rgba(28,107,59,0.12)] transition hover:bg-[#F4F8F5] active:scale-[0.98]"
+                  aria-label="Traduci testo"
+                >
+                  <Languages className="h-10 w-10" strokeWidth={1.8} />
+                  <span className="mt-1 text-[13px] font-bold tracking-wide">TRADUCI</span>
                 </button>
               </div>
 
