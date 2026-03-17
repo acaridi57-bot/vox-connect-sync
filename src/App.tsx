@@ -461,8 +461,7 @@ function App() {
               <TopActionButton
                 ariaLabel="Settings"
                 onClick={() => {
-                  console.log('[DEBUG] Settings clicked, showSettings:', showSettings);
-                  setShowSettings((prev) => !prev);
+                  useAppStore.getState().setSettingsOpen(true);
                 }}
               >
                 <Settings className="h-[18px] w-[18px]" />
