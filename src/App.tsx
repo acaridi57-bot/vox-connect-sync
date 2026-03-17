@@ -429,18 +429,25 @@ function App() {
     recognition.onresult = (event: any) => {
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results?.[i];
-        if (!result?.isFinal) continue;
-        const transcript = result[0]?.transcript?.trim?.() || "";
+        const transcript = result?.[0]?.transcript?.trim?.() || "";
         if (!transcript) continue;
 
-        const threshold = getSensitivityThreshold();
-        if (currentAudioLevelRef.current < threshold) {
-          console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
-          continue;
+        if (result?.isFinal) {
+          const threshold = getSensitivityThreshold();
+          if (currentAudioLevelRef.current < threshold) {
+            console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
+            continue;
+          }
+          // Only set text in textarea — user presses TRADUCI to translate
+          setText((prev) => prev ? prev + " " + transcript : transcript);
+        } else {
+          // Show interim results in real-time
+          setText((prev) => {
+            // Replace any previous interim by keeping only finalized text
+            const base = prev.replace(/\s*\[.*\]$/, "");
+            return base ? base + " [" + transcript + "]" : "[" + transcript + "]";
+          });
         }
-
-        setText(transcript);
-        void handleTranslate(transcript);
         break;
       }
     };
