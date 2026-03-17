@@ -231,21 +231,45 @@ function App() {
 
       stopSpeaking();
 
-      const utterance = new SpeechSynthesisUtterance(content);
-      utterance.lang = toLang.speechCode;
-
-      // Apply voice settings from store
       const store = useAppStore.getState();
       const allVoices = window.speechSynthesis.getVoices();
 
       // Try to use the voice selected in settings
       const selectedVoice = allVoices.find((v) => v.name === store.voiceName);
+
+      // Check if selected voice language matches target language
+      if (selectedVoice) {
+        const voiceLangPrefix = selectedVoice.lang?.slice(0, 2).toLowerCase();
+        const targetPrefix = toLang.code.toLowerCase();
+        if (voiceLangPrefix && voiceLangPrefix !== targetPrefix) {
+          // Vocal warning about mismatch
+          const warning = new SpeechSynthesisUtterance(
+            `Attenzione: la voce selezionata nel setup è ${selectedVoice.lang}, ma la lingua di destinazione è ${toLang.label}. Cambia la voce nelle impostazioni.`
+          );
+          warning.lang = "it-IT";
+          warning.rate = 1;
+          warning.pitch = 1;
+          warning.volume = 1;
+          const itVoice = allVoices.find((v) => v.lang?.startsWith("it") && v.name.toLowerCase().includes("google"));
+          if (itVoice) warning.voice = itVoice;
+          warning.onend = () => {
+            setStatus(isMicEnabled && shouldKeepListeningRef.current ? "listening" : "idle");
+            scheduleRestartListening();
+          };
+          window.speechSynthesis.speak(warning);
+          setStatus("speaking");
+          return;
+        }
+      }
+
       // Fallback: find a Google voice or any voice for the target language
       const fallbackVoice =
         allVoices.find((v) => v.name.toLowerCase().includes("google") && v.lang.startsWith(toLang.code)) ||
         allVoices.find((v) => v.lang === toLang.speechCode) ||
         allVoices.find((v) => v.lang.startsWith(toLang.code));
 
+      const utterance = new SpeechSynthesisUtterance(content);
+      utterance.lang = toLang.speechCode;
       utterance.voice = selectedVoice || fallbackVoice || null;
       utterance.rate = store.speechRate;
       utterance.pitch = store.speechPitch;
@@ -271,7 +295,7 @@ function App() {
 
       window.speechSynthesis.speak(utterance);
     },
-    [clearRestartTimeout, isMicEnabled, scheduleRestartListening, stopSpeaking, toLang.code, toLang.speechCode]
+    [clearRestartTimeout, isMicEnabled, scheduleRestartListening, stopSpeaking, toLang.code, toLang.label, toLang.speechCode]
   );
 
   const loadConversation = useCallback(async (_sid: string) => {
