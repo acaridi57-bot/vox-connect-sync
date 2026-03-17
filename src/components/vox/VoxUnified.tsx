@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import acaridiLogo from "@/assets/acaridi-logo.png";
 import { Mic, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
