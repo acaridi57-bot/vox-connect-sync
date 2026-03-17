@@ -511,6 +511,7 @@ function App() {
       // Stop everything
       stopListening();
       stopSpeaking();
+      dictatedTextRef.current = "";
       releaseMicPermission();
       setIsMicEnabled(false);
       setErrorText("");
