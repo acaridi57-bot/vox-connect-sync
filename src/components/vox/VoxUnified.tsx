@@ -23,35 +23,19 @@ const LANGS = [
 
 const APP_LANGS = ["it", "en", "es", "fr", "de", "zh", "sq"];
 
-const EXCLUDED_VOICES = [
-  "compact","espeak","festival","flite","mbrola","pico","svox","loquendo",
-  "microsoft david","microsoft mark","microsoft zira","microsoft hazel","microsoft susan","microsoft george",
-  "aaron","albert","alva","bahh","boing","bollicine","brutte notizie","buone notizie","campane",
-  "carmit","damayanti","daria","flo","fred","giullare","gordon","grandma","grandpa",
-  "kanya","lekha","luciana","luisa","magnus","moira","montse","nora","organ","paolo","reed",
-  "rishi","sandy","serena","superstar","tessa","whisper","wobble","xander","yelda",
-  "yuna","zuzana","bubbles","cellos","ellen","fiona","junior","kyoko","lee",
-  "milena","noora","oliver","otoya","satu","sinji","sin-ji","amira",
-  "rocko","shelley","sussurro","tremolio","trinoid","violoncelli","zarvox","kathy","nicky",
-  "martha","helena",
-  // Excluded by user
-  "marin","cedar","anna (de","eddy","martin","catherine","arthur","daniel","ralph",
-  "samantha","monica","jacques","marie","yu-shu","ting-ting","li-mu","thomas",
-  "karen","amelie","amélie",
-];
-
 function filterVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
   const filtered = all.filter((v) => {
     const lang = v.lang?.toLowerCase().slice(0, 2) ?? "";
     const name = v.name.toLowerCase();
     if (!APP_LANGS.includes(lang)) return false;
-    if (EXCLUDED_VOICES.some((r) => name.includes(r))) return false;
-    return true;
+    const isGoogle = name.includes("google");
+    const isAlice = name === "alice" && lang === "it";
+    return isGoogle || isAlice;
   });
   filtered.sort((a, b) => {
-    const aG = a.name.toLowerCase().includes("google") ? 0 : 1;
-    const bG = b.name.toLowerCase().includes("google") ? 0 : 1;
-    if (aG !== bG) return aG - bG;
+    const aAlice = a.name.toLowerCase() === "alice" ? -1 : 0;
+    const bAlice = b.name.toLowerCase() === "alice" ? -1 : 0;
+    if (aAlice !== bAlice) return aAlice - bAlice;
     return a.lang.localeCompare(b.lang);
   });
   return filtered;
@@ -60,21 +44,21 @@ function filterVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
 function bestVoiceForLang(voices: SpeechSynthesisVoice[], langCode: string, gender: "female" | "male"): SpeechSynthesisVoice | undefined {
   const prefix = langCode.slice(0, 2).toLowerCase();
   const FEMALE: Record<string, string[]> = {
-    it: ["alice", "google italiano", "federica", "paola"],
-    en: ["google us english", "karen", "victoria", "google uk english female"],
-    es: ["paulina", "google español"],
-    fr: ["amelie", "amélie", "marie", "google français"],
-    de: ["anna", "google deutsch"],
-    zh: ["google 普通话", "普通话"],
+    it: ["alice", "google italiano"],
+    en: ["google us english", "google uk english female"],
+    es: ["google español"],
+    fr: ["google français"],
+    de: ["google deutsch"],
+    zh: ["google 普通话"],
     sq: ["google shqip"],
   };
   const MALE: Record<string, string[]> = {
-    it: ["luca", "google italiano"],
+    it: ["google italiano"],
     en: ["google uk english male", "google us english"],
-    es: ["jorge", "google español"],
+    es: ["google español"],
     fr: ["google français"],
-    de: ["yannick", "google deutsch"],
-    zh: ["google 普通话", "普通话"],
+    de: ["google deutsch"],
+    zh: ["google 普通话"],
     sq: ["google shqip"],
   };
   const preferred = gender === "female" ? (FEMALE[prefix] ?? []) : (MALE[prefix] ?? []);
