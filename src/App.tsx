@@ -80,8 +80,7 @@ function App() {
   const [translatedText, setTranslatedText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorText, setErrorText] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
-  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [autoSpeak] = useState(true);
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
   const [sessionId, setSessionId] = useState("");
 
