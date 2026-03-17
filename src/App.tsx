@@ -660,9 +660,9 @@ function App() {
           </section>
         </main>
       </div>
+      <SettingsModal />
     </div>
   );
-}
 
 function TopActionButton({
   children,
