@@ -907,7 +907,7 @@ function App() {
               )}
 
               <p className="mt-4 max-w-[300px] text-center text-[15px] leading-relaxed text-[#4E6358]">
-                Tocca il microfono grande per avviare l'ascolto continuo; si ferma solo spegnendo il tasto piccolo
+                {isMicEnabled ? "Ascolto attivo — tocca per fermare" : "Tocca il microfono per avviare la traduzione vocale"}
               </p>
 
               {!recognitionSupported && (
