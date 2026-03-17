@@ -353,17 +353,14 @@ function App() {
       return;
     }
 
-    if (!isMicEnabled) {
-      setErrorText("Attiva prima il microfono dal tasto in alto a sinistra.");
-      return;
-    }
-
     stopSpeaking();
     setErrorText("");
     clearRestartTimeout();
 
+    // Request mic permission directly from big button click
     try {
       await requestMicrophonePermission();
+      setIsMicEnabled(true);
     } catch (error: any) {
       console.error(error);
       const permissionDenied =
@@ -411,7 +408,6 @@ function App() {
         const transcript = result[0]?.transcript?.trim?.() || "";
         if (!transcript) continue;
 
-        // Check audio level against sensitivity threshold
         const threshold = getSensitivityThreshold();
         if (currentAudioLevelRef.current < threshold) {
           console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
@@ -426,7 +422,7 @@ function App() {
 
     recognition.onerror = (event: any) => {
       if (event?.error === "aborted" || event?.error === "no-speech") {
-        if (shouldKeepListeningRef.current && isMicEnabled) {
+        if (shouldKeepListeningRef.current) {
           scheduleRestartListening();
         }
         return;
@@ -443,14 +439,14 @@ function App() {
 
       setStatus("error");
       setErrorText("Errore durante il riconoscimento vocale.");
-      if (shouldKeepListeningRef.current && isMicEnabled) {
+      if (shouldKeepListeningRef.current) {
         scheduleRestartListening();
       }
     };
 
     recognition.onend = () => {
       recognitionRef.current = null;
-      if (shouldKeepListeningRef.current && isMicEnabled) {
+      if (shouldKeepListeningRef.current) {
         setStatus("listening");
         scheduleRestartListening();
         return;
@@ -466,7 +462,7 @@ function App() {
       setStatus("error");
       setErrorText("Impossibile avviare l'ascolto vocale.");
     }
-  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, handleTranslate, isMicEnabled, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
+  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, handleTranslate, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
   const handleMicPowerToggle = useCallback(async () => {
     if (isMicEnabled) {
