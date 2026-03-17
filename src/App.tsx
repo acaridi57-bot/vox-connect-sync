@@ -413,7 +413,7 @@ function App() {
 
     if (!SpeechRecognitionCtor) {
       setStatus("error");
-      setErrorText("Speech Recognition non disponibile.");
+      setErrorText("Speech Recognition not available.");
       return;
     }
 
