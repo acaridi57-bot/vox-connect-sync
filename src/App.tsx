@@ -83,8 +83,12 @@ function App() {
   const [autoSpeak] = useState(true);
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
   const [sessionId, setSessionId] = useState("");
+  const [isMicEnabled, setIsMicEnabled] = useState(false);
 
   const recognitionRef = useRef<any>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const shouldKeepListeningRef = useRef(false);
+  const restartTimeoutRef = useRef<number | null>(null);
 
   const canSwap = useMemo(
     () => fromLang.code !== toLang.code,
@@ -95,24 +99,53 @@ function App() {
     typeof window !== "undefined" &&
     Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 
+  const clearRestartTimeout = useCallback(() => {
+    if (restartTimeoutRef.current !== null) {
+      window.clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
+  }, []);
+
   const stopSpeaking = useCallback(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
   }, []);
 
+  const releaseMicPermission = useCallback(() => {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  }, []);
+
   const stopListening = useCallback(() => {
+    shouldKeepListeningRef.current = false;
+    clearRestartTimeout();
     try {
       recognitionRef.current?.stop?.();
     } catch {
       // niente
     } finally {
       recognitionRef.current = null;
-      setStatus((prev) => (prev === "listening" ? "idle" : prev));
+      setStatus("idle");
     }
+  }, [clearRestartTimeout]);
+
+  const requestMicrophonePermission = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      throw new Error("MicrophoneUnavailable");
+    }
+
+    if (mediaStreamRef.current) {
+      return mediaStreamRef.current;
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaStreamRef.current = stream;
+    return stream;
   }, []);
 
   const getStatusLabel = useCallback(() => {
+    if (!isMicEnabled) return "Microfono spento";
     switch (status) {
       case "listening":
         return "Listening...";
@@ -123,9 +156,21 @@ function App() {
       case "error":
         return "Error";
       default:
-        return "Ready";
+        return "Microfono attivo";
     }
-  }, [status]);
+  }, [isMicEnabled, status]);
+
+  const scheduleRestartListening = useCallback(() => {
+    if (!shouldKeepListeningRef.current || !isMicEnabled) return;
+    clearRestartTimeout();
+    restartTimeoutRef.current = window.setTimeout(() => {
+      if (!shouldKeepListeningRef.current || !isMicEnabled || recognitionRef.current) {
+        return;
+      }
+      const event = new CustomEvent("vox:start-continuous-listening");
+      window.dispatchEvent(event);
+    }, 250);
+  }, [clearRestartTimeout, isMicEnabled]);
 
   const speakText = useCallback(
     (content: string) => {
@@ -134,7 +179,8 @@ function App() {
         typeof window === "undefined" ||
         !("speechSynthesis" in window)
       ) {
-        setStatus("idle");
+        setStatus(isMicEnabled && shouldKeepListeningRef.current ? "listening" : "idle");
+        scheduleRestartListening();
         return;
       }
 
@@ -153,12 +199,26 @@ function App() {
       }
 
       utterance.onstart = () => setStatus("speaking");
-      utterance.onend = () => setStatus("idle");
-      utterance.onerror = () => setStatus("idle");
+      utterance.onend = () => {
+        if (isMicEnabled && shouldKeepListeningRef.current) {
+          setStatus("listening");
+          scheduleRestartListening();
+          return;
+        }
+        setStatus("idle");
+      };
+      utterance.onerror = () => {
+        if (isMicEnabled && shouldKeepListeningRef.current) {
+          setStatus("listening");
+          scheduleRestartListening();
+          return;
+        }
+        setStatus("idle");
+      };
 
       window.speechSynthesis.speak(utterance);
     },
-    [stopSpeaking, toLang.code, toLang.speechCode]
+    [clearRestartTimeout, isMicEnabled, scheduleRestartListening, stopSpeaking, toLang.code, toLang.speechCode]
   );
 
   const loadConversation = useCallback(async (_sid: string) => {
@@ -197,7 +257,12 @@ function App() {
         if (autoSpeak) {
           speakText(translated);
         } else {
-          setStatus("idle");
+          if (isMicEnabled && shouldKeepListeningRef.current) {
+            setStatus("listening");
+            scheduleRestartListening();
+          } else {
+            setStatus("idle");
+          }
         }
       } catch (error) {
         console.error(error);
@@ -205,12 +270,17 @@ function App() {
         setErrorText(
           "Traduzione non riuscita. Riprova tra qualche secondo."
         );
+        if (isMicEnabled && shouldKeepListeningRef.current) {
+          scheduleRestartListening();
+        }
       }
     },
     [
       autoSpeak,
       fromLang.code,
       fromLang.label,
+      isMicEnabled,
+      scheduleRestartListening,
       speakText,
       text,
       toLang.code,
@@ -224,15 +294,40 @@ function App() {
     setToLang(fromLang);
   }, [canSwap, fromLang, toLang]);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     if (!recognitionSupported || typeof window === "undefined") {
       setStatus("error");
       setErrorText("Speech Recognition non supportato in questo browser.");
       return;
     }
 
+    if (!isMicEnabled) {
+      setErrorText("Attiva prima il microfono dal tasto in alto a sinistra.");
+      return;
+    }
+
     stopSpeaking();
     setErrorText("");
+    clearRestartTimeout();
+
+    try {
+      await requestMicrophonePermission();
+    } catch (error: any) {
+      console.error(error);
+      const permissionDenied =
+        error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError";
+      setStatus("error");
+      setErrorText(
+        permissionDenied
+          ? "Permesso microfono negato dal dispositivo."
+          : "Impossibile accedere al microfono del dispositivo."
+      );
+      return;
+    }
+
+    if (recognitionRef.current) {
+      return;
+    }
 
     const SpeechRecognitionCtor =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -243,12 +338,14 @@ function App() {
       return;
     }
 
+    shouldKeepListeningRef.current = true;
+
     const recognition = new SpeechRecognitionCtor();
     recognitionRef.current = recognition;
 
     recognition.lang = fromLang.speechCode;
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
@@ -256,39 +353,92 @@ function App() {
     };
 
     recognition.onresult = (event: any) => {
-      const transcript = event?.results?.[0]?.[0]?.transcript?.trim?.() || "";
-      if (!transcript) {
-        setStatus("idle");
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results?.[i];
+        if (!result?.isFinal) continue;
+        const transcript = result[0]?.transcript?.trim?.() || "";
+        if (!transcript) continue;
+
+        setText(transcript);
+        void handleTranslate(transcript);
+        break;
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event?.error === "aborted" || event?.error === "no-speech") {
+        if (shouldKeepListeningRef.current && isMicEnabled) {
+          scheduleRestartListening();
+        }
         return;
       }
 
-      setText(transcript);
-      void handleTranslate(transcript);
-    };
+      if (event?.error === "not-allowed" || event?.error === "service-not-allowed") {
+        setIsMicEnabled(false);
+        shouldKeepListeningRef.current = false;
+        releaseMicPermission();
+        setStatus("error");
+        setErrorText("Permesso microfono negato dal dispositivo.");
+        return;
+      }
 
-    recognition.onerror = () => {
       setStatus("error");
       setErrorText("Errore durante il riconoscimento vocale.");
+      if (shouldKeepListeningRef.current && isMicEnabled) {
+        scheduleRestartListening();
+      }
     };
 
     recognition.onend = () => {
       recognitionRef.current = null;
-      setStatus((prev) =>
-        prev === "listening" ? "idle" : prev === "error" ? "error" : prev
-      );
+      if (shouldKeepListeningRef.current && isMicEnabled) {
+        setStatus("listening");
+        scheduleRestartListening();
+        return;
+      }
+      setStatus("idle");
     };
 
-    recognition.start();
-  }, [fromLang.speechCode, handleTranslate, recognitionSupported, stopSpeaking]);
+    try {
+      recognition.start();
+    } catch (error) {
+      console.error(error);
+      recognitionRef.current = null;
+      setStatus("error");
+      setErrorText("Impossibile avviare l'ascolto vocale.");
+    }
+  }, [clearRestartTimeout, fromLang.speechCode, handleTranslate, isMicEnabled, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
-  const handleMicClick = useCallback(() => {
-    console.log('[DEBUG] handleMicClick called, status:', status);
-    if (status === "listening") {
+  const handleMicPowerToggle = useCallback(async () => {
+    if (isMicEnabled) {
       stopListening();
+      stopSpeaking();
+      releaseMicPermission();
+      setIsMicEnabled(false);
+      setErrorText("");
       return;
     }
-    startListening();
-  }, [startListening, status, stopListening]);
+
+    try {
+      await requestMicrophonePermission();
+      setIsMicEnabled(true);
+      setStatus("idle");
+      setErrorText("");
+    } catch (error: any) {
+      console.error(error);
+      setStatus("error");
+      setErrorText("Permesso microfono negato dal dispositivo.");
+    }
+  }, [isMicEnabled, releaseMicPermission, requestMicrophonePermission, stopListening, stopSpeaking]);
+
+  const handleContinuousListeningStart = useCallback(async () => {
+    if (!isMicEnabled) {
+      await handleMicPowerToggle();
+      if (!mediaStreamRef.current) return;
+    }
+
+    await startListening();
+  }, [handleMicPowerToggle, isMicEnabled, startListening]);
 
   const handleSend = useCallback(async () => {
     await handleTranslate(text);
@@ -297,6 +447,8 @@ function App() {
   const handleDelete = useCallback(async () => {
     stopListening();
     stopSpeaking();
+    releaseMicPermission();
+    setIsMicEnabled(false);
     setText("");
     setTranslatedText("");
     setConversation([]);
@@ -310,7 +462,7 @@ function App() {
     if (typeof window !== "undefined") {
       localStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
     }
-  }, [stopListening, stopSpeaking]);
+  }, [releaseMicPermission, stopListening, stopSpeaking]);
 
   const handleShare = useCallback(async () => {
     const content = translatedText
@@ -390,7 +542,7 @@ function App() {
 
       if (meta && e.key.toLowerCase() === "m") {
         e.preventDefault();
-        handleMicClick();
+        void handleMicPowerToggle();
       }
 
       if (meta && e.key.toLowerCase() === "l") {
@@ -409,9 +561,26 @@ function App() {
       }
     };
 
+    const onContinuousListeningStart = () => {
+      void handleContinuousListeningStart();
+    };
+
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleDelete, handleMicClick, handleSend, swapLanguages]);
+    window.addEventListener("vox:start-continuous-listening", onContinuousListeningStart);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("vox:start-continuous-listening", onContinuousListeningStart);
+    };
+  }, [handleContinuousListeningStart, handleDelete, handleMicPowerToggle, handleSend, swapLanguages]);
+
+  useEffect(() => {
+    return () => {
+      stopListening();
+      stopSpeaking();
+      releaseMicPermission();
+      clearRestartTimeout();
+    };
+  }, [clearRestartTimeout, releaseMicPermission, stopListening, stopSpeaking]);
 
   return (
     <div className="min-h-screen bg-transparent text-[#243428]">
@@ -449,7 +618,7 @@ function App() {
             </div>
 
             <div className="grid shrink-0 grid-cols-4 gap-2">
-              <TopActionButton ariaLabel="Voice" onClick={handleMicClick}>
+              <TopActionButton ariaLabel="Power microphone" onClick={() => void handleMicPowerToggle()} isActive={isMicEnabled}>
                 <Mic className="h-[18px] w-[18px]" />
               </TopActionButton>
 
@@ -531,11 +700,10 @@ function App() {
               {!translatedText ? (
                 <div className="mx-auto max-w-xs">
                   <h2 className="text-[20px] font-semibold leading-snug text-[#2A4A35]">
-                    Tap the microphone to start translating
+                    Tocca il microfono centrale per avviare la traduzione vocale
                   </h2>
                   <p className="mt-3 text-[15px] leading-relaxed text-[#61736A]">
-                    Speak naturally — Speak &amp; Translate Live will detect and
-                    translate in real-time
+                    Il tasto piccolo accende o spegne il microfono, quello grande avvia l'ascolto continuo
                   </p>
                 </div>
               ) : (
@@ -638,16 +806,15 @@ function App() {
             <div className="mt-6 flex flex-col items-center justify-center">
               <button
                 type="button"
-                onClick={handleMicClick}
+                onClick={() => void handleContinuousListeningStart()}
                 className="flex h-28 w-28 items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] transition hover:bg-[#165330] active:scale-[0.98]"
-                aria-label="Start voice translation"
+                aria-label="Start continuous voice translation"
               >
                 <Mic className="h-12 w-12" strokeWidth={1.8} />
               </button>
 
               <p className="mt-4 max-w-[300px] text-center text-[15px] leading-relaxed text-[#4E6358]">
-                Speak naturally — Speak &amp; Translate Live listens and
-                translates
+                Tocca il microfono grande per avviare l'ascolto continuo; si ferma solo spegnendo il tasto piccolo
               </p>
 
               {!recognitionSupported && (
@@ -668,17 +835,24 @@ function TopActionButton({
   children,
   ariaLabel,
   onClick,
+  isActive = false,
 }: {
   children: ReactNode;
   ariaLabel: string;
   onClick: () => void;
+  isActive?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_4px_10px_rgba(28,107,59,0.16)] transition hover:bg-[#165330] active:scale-[0.98]"
+      aria-pressed={isActive}
+      className={`flex h-[42px] w-[42px] items-center justify-center rounded-full border text-white shadow-[0_4px_10px_rgba(28,107,59,0.16)] transition active:scale-[0.98] ${
+        isActive
+          ? "border-[#1C6B3B] bg-[#1C6B3B]"
+          : "border-[#D7E3DA] bg-white text-[#1C6B3B] hover:bg-[#F4F8F5]"
+      }`}
     >
       {children}
     </button>
