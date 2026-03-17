@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Settings, Trash2, MicOff, Mic, LogOut, Send } from "lucide-react";
+import { Settings, Trash2, MicOff, Mic, Share2, Send } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { useMicrophone } from "@/hooks/useMicrophone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";

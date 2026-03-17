@@ -7,10 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AnimatePresence, motion } from "framer-motion";
 
 export const VoxLogo = () => (
-  <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="36" height="36" rx="10" fill="hsl(var(--vox-green))" />
-    <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="14" fontWeight="700" fontFamily="Inter, sans-serif">S&T</text>
-  </svg>
+  <div className="flex flex-col leading-none">
+    <span className="text-lg font-bold italic text-primary">ACaridi</span>
+    <span className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase">Digital App</span>
+  </div>
 );
 
 const LANGS = [
