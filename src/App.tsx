@@ -892,7 +892,15 @@ function App() {
               <div className="flex-1 rounded-[18px] border border-[#D7E3DA] bg-white/90 shadow-[0_8px_24px_rgba(22,42,28,0.08)]">
                 <textarea
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    const nextValue = e.target.value;
+                    dictatedTextRef.current = nextValue
+                      .replace(/\s*\[.*?\]/g, "")
+                      .replace(/\s+/g, " ")
+                      .trim();
+                    setText(nextValue);
+                    setTranslatedText("");
+                  }}
                   onKeyDown={onTextareaKeyDown}
                   rows={1}
                   placeholder="Scrivi un testo da tradurre..."
