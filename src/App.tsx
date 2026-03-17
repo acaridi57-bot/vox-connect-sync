@@ -89,6 +89,10 @@ function App() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const shouldKeepListeningRef = useRef(false);
   const restartTimeoutRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const currentAudioLevelRef = useRef(0);
+  const rafRef = useRef<number>(0);
 
   const canSwap = useMemo(
     () => fromLang.code !== toLang.code,
