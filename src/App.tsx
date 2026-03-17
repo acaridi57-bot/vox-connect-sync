@@ -542,7 +542,7 @@ function App() {
 
       if (meta && e.key.toLowerCase() === "m") {
         e.preventDefault();
-        handleMicClick();
+        void handleMicPowerToggle();
       }
 
       if (meta && e.key.toLowerCase() === "l") {
@@ -561,9 +561,26 @@ function App() {
       }
     };
 
+    const onContinuousListeningStart = () => {
+      void handleContinuousListeningStart();
+    };
+
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleDelete, handleMicClick, handleSend, swapLanguages]);
+    window.addEventListener("vox:start-continuous-listening", onContinuousListeningStart);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("vox:start-continuous-listening", onContinuousListeningStart);
+    };
+  }, [handleContinuousListeningStart, handleDelete, handleMicPowerToggle, handleSend, swapLanguages]);
+
+  useEffect(() => {
+    return () => {
+      stopListening();
+      stopSpeaking();
+      releaseMicPermission();
+      clearRestartTimeout();
+    };
+  }, [clearRestartTimeout, releaseMicPermission, stopListening, stopSpeaking]);
 
   return (
     <div className="min-h-screen bg-transparent text-[#243428]">
