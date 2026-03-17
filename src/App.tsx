@@ -905,7 +905,7 @@ function App() {
                   }}
                   onKeyDown={onTextareaKeyDown}
                   rows={1}
-                  placeholder="Scrivi un testo da tradurre..."
+                  placeholder="Type text to translate..."
                   className="min-h-[52px] w-full resize-none bg-transparent px-4 py-3 text-[16px] text-[#243428] outline-none placeholder:text-[#7C8B82]"
                 />
               </div>
