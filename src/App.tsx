@@ -398,8 +398,8 @@ function App() {
       setStatus("error");
       setErrorText(
         permissionDenied
-          ? "Permesso microfono negato dal dispositivo."
-          : "Impossibile accedere al microfono del dispositivo."
+          ? "Microphone permission denied by the device."
+          : "Unable to access the device microphone."
       );
       return;
     }
