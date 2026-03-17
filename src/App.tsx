@@ -620,7 +620,7 @@ function App() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("vox:start-continuous-listening", onContinuousListeningStart);
     };
-  }, [handleContinuousListeningStart, handleDelete, handleMicPowerToggle, handleSend, swapLanguages]);
+  }, [handleContinuousListeningStart, handleDelete, handleBigMicToggle, handleSend, swapLanguages]);
 
   useEffect(() => {
     return () => {
