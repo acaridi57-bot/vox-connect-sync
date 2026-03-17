@@ -667,7 +667,7 @@ function App() {
               </div>
             </div>
 
-            <div className="grid shrink-0 grid-cols-4 gap-2">
+            <div className="grid shrink-0 grid-cols-5 gap-2">
               <TopActionButton ariaLabel="Voice setup" onClick={handleSmallMicClick}>
                 <Mic className="h-[18px] w-[18px]" />
               </TopActionButton>
@@ -683,6 +683,10 @@ function App() {
                 }}
               >
                 <Settings className="h-[18px] w-[18px]" />
+              </TopActionButton>
+
+              <TopActionButton ariaLabel="Traduci" onClick={() => void handleSend()}>
+                <Languages className="h-[18px] w-[18px]" />
               </TopActionButton>
 
               <TopActionButton ariaLabel="Share" onClick={() => void handleShare()}>
