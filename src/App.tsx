@@ -19,6 +19,8 @@ import {
   Volume2,
 } from "lucide-react";
 import { translateText } from "@/lib/speech/demoTranslations";
+import { useAppStore } from "@/store/useAppStore";
+import { SettingsModal } from "@/components/vox/VoxUnified";
 
 declare global {
   interface Window {
