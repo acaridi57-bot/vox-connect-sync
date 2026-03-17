@@ -301,7 +301,7 @@ function App() {
     setTranslatedText("");
     setConversation([]);
     setErrorText("");
-    setShowSettings(false);
+    useAppStore.getState().setSettingsOpen(false);
     setStatus("idle");
 
     const newSessionId = createId();
