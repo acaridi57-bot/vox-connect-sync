@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Settings, Trash2, MicOff, Mic, LogOut, Send } from "lucide-react";
+import { Settings, Trash2, MicOff, Mic, Share2, Send } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { useMicrophone } from "@/hooks/useMicrophone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
@@ -34,12 +34,14 @@ export default function Index() {
     if (isMuted) { resumeMic(); setIsMuted(false); } else { pauseMic(); setIsMuted(true); }
   }, [isMuted, pauseMic, resumeMic]);
 
-  const handleLogout = useCallback(() => {
-    window.speechSynthesis?.cancel();
-    stopRecognition(); stopMic(); clearMessages();
-    useAppStore.getState().setStatus("idle");
-    window.location.reload();
-  }, [stopRecognition, stopMic, clearMessages]);
+  const handleShare = useCallback(async () => {
+    if (navigator.share) {
+      await navigator.share({ title: "Speak & Translate Live", text: "Traduci in tempo reale!", url: window.location.href });
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      alert("Link copiato!");
+    }
+  }, []);
 
   const handleSendText = useCallback(async () => {
     const text = inputText.trim();
@@ -80,23 +82,23 @@ export default function Index() {
       <header className="px-5 pt-12 pb-3 flex items-center justify-between safe-top z-10">
         <div className="flex items-center gap-3">
           <VoxLogo />
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Speak & Translate Live</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleMuteToggle} className={`p-2.5 rounded-full border transition-colors ${isMuted ? "bg-destructive/10 border-destructive/40" : "bg-white/80 border-[hsl(var(--border))]"}`}>
-            {isMuted ? <MicOff size={20} className="text-destructive" /> : <Mic size={20} className="text-[hsl(var(--muted-foreground))]" />}
-          </button>
-          <button onClick={handleClear} className="p-2.5 rounded-full bg-white/80 border border-[hsl(var(--border))] transition-colors">
-            <Trash2 size={20} className="text-[hsl(var(--muted-foreground))]" />
-          </button>
-          <button onClick={() => setSettingsOpen(true)} className="p-2.5 rounded-full bg-white/80 border border-primary/40 active:bg-primary/10 transition">
-            <Settings size={20} className="text-[hsl(var(--muted-foreground))]" />
-          </button>
-          <button onClick={handleLogout} className="p-2.5 rounded-full bg-white/80 border border-destructive/40 active:bg-destructive/10 transition">
-            <LogOut size={20} className="text-destructive" />
-          </button>
-        </div>
-      </header>
+           <h1 className="text-xl font-bold tracking-tight text-foreground">Speak & Translate Live</h1>
+         </div>
+         <div className="flex items-center gap-2">
+           <button onClick={handleMuteToggle} className={`p-2.5 rounded-full border transition-colors ${isMuted ? "bg-destructive/10 border-destructive/40" : "bg-background border-blue-300"}`}>
+             {isMuted ? <MicOff size={20} className="text-destructive" /> : <Mic size={20} className="text-blue-500" />}
+           </button>
+           <button onClick={handleClear} className="p-2.5 rounded-full bg-background border border-red-300 transition-colors">
+             <Trash2 size={20} className="text-red-500" />
+           </button>
+           <button onClick={() => setSettingsOpen(true)} className="p-2.5 rounded-full bg-background border border-green-300 active:bg-green-50 transition">
+             <Settings size={20} className="text-green-500" />
+           </button>
+           <button onClick={handleShare} className="p-2.5 rounded-full bg-background border border-orange-300 active:bg-orange-50 transition">
+             <Share2 size={20} className="text-orange-500" />
+           </button>
+         </div>
+       </header>
 
       {/* LANGUAGE SELECTOR */}
       <div className="px-5 py-2">
