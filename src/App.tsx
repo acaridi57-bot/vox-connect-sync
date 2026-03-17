@@ -11,6 +11,7 @@ import {
 import {
   ArrowRightLeft,
   ChevronDown,
+  Languages,
   Mic,
   Send,
   Settings,
