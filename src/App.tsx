@@ -749,10 +749,10 @@ function App() {
               {!translatedText ? (
                 <div className="mx-auto max-w-xs">
                   <h2 className="text-[20px] font-semibold leading-snug text-[#2A4A35]">
-                    Tocca il microfono centrale per avviare la traduzione vocale
+                    Premi il microfono grande per parlare e tradurre
                   </h2>
                   <p className="mt-3 text-[15px] leading-relaxed text-[#61736A]">
-                    Il tasto piccolo accende o spegne il microfono, quello grande avvia l'ascolto continuo
+                    Il tasto piccolo 🎙️ apre il setup voce · Premi di nuovo il grande per fermare
                   </p>
                 </div>
               ) : (
