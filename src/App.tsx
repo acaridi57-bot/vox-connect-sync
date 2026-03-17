@@ -964,7 +964,7 @@ function App() {
                   aria-label="Traduci testo"
                 >
                   <Languages className="h-10 w-10" strokeWidth={1.8} />
-                  <span className="mt-1 text-[13px] font-bold tracking-wide">TRADUCI</span>
+                  <span className="mt-1 text-[13px] font-bold tracking-wide">TRANSLATE</span>
                 </button>
               </div>
 
