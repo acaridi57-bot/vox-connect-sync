@@ -11,6 +11,7 @@ import {
 import {
   ArrowRightLeft,
   ChevronDown,
+  Languages,
   Mic,
   Send,
   Settings,
@@ -230,21 +231,45 @@ function App() {
 
       stopSpeaking();
 
-      const utterance = new SpeechSynthesisUtterance(content);
-      utterance.lang = toLang.speechCode;
-
-      // Apply voice settings from store
       const store = useAppStore.getState();
       const allVoices = window.speechSynthesis.getVoices();
 
       // Try to use the voice selected in settings
       const selectedVoice = allVoices.find((v) => v.name === store.voiceName);
+
+      // Check if selected voice language matches target language
+      if (selectedVoice) {
+        const voiceLangPrefix = selectedVoice.lang?.slice(0, 2).toLowerCase();
+        const targetPrefix = toLang.code.toLowerCase();
+        if (voiceLangPrefix && voiceLangPrefix !== targetPrefix) {
+          // Vocal warning about mismatch
+          const warning = new SpeechSynthesisUtterance(
+            `Attenzione: la voce selezionata nel setup è ${selectedVoice.lang}, ma la lingua di destinazione è ${toLang.label}. Cambia la voce nelle impostazioni.`
+          );
+          warning.lang = "it-IT";
+          warning.rate = 1;
+          warning.pitch = 1;
+          warning.volume = 1;
+          const itVoice = allVoices.find((v) => v.lang?.startsWith("it") && v.name.toLowerCase().includes("google"));
+          if (itVoice) warning.voice = itVoice;
+          warning.onend = () => {
+            setStatus(isMicEnabled && shouldKeepListeningRef.current ? "listening" : "idle");
+            scheduleRestartListening();
+          };
+          window.speechSynthesis.speak(warning);
+          setStatus("speaking");
+          return;
+        }
+      }
+
       // Fallback: find a Google voice or any voice for the target language
       const fallbackVoice =
         allVoices.find((v) => v.name.toLowerCase().includes("google") && v.lang.startsWith(toLang.code)) ||
         allVoices.find((v) => v.lang === toLang.speechCode) ||
         allVoices.find((v) => v.lang.startsWith(toLang.code));
 
+      const utterance = new SpeechSynthesisUtterance(content);
+      utterance.lang = toLang.speechCode;
       utterance.voice = selectedVoice || fallbackVoice || null;
       utterance.rate = store.speechRate;
       utterance.pitch = store.speechPitch;
@@ -270,7 +295,7 @@ function App() {
 
       window.speechSynthesis.speak(utterance);
     },
-    [clearRestartTimeout, isMicEnabled, scheduleRestartListening, stopSpeaking, toLang.code, toLang.speechCode]
+    [clearRestartTimeout, isMicEnabled, scheduleRestartListening, stopSpeaking, toLang.code, toLang.label, toLang.speechCode]
   );
 
   const loadConversation = useCallback(async (_sid: string) => {
@@ -666,7 +691,7 @@ function App() {
               </div>
             </div>
 
-            <div className="grid shrink-0 grid-cols-4 gap-2">
+            <div className="grid shrink-0 grid-cols-5 gap-2">
               <TopActionButton ariaLabel="Voice setup" onClick={handleSmallMicClick}>
                 <Mic className="h-[18px] w-[18px]" />
               </TopActionButton>
@@ -682,6 +707,10 @@ function App() {
                 }}
               >
                 <Settings className="h-[18px] w-[18px]" />
+              </TopActionButton>
+
+              <TopActionButton ariaLabel="Traduci" onClick={() => void handleSend()}>
+                <Languages className="h-[18px] w-[18px]" />
               </TopActionButton>
 
               <TopActionButton ariaLabel="Share" onClick={() => void handleShare()}>
@@ -942,9 +971,9 @@ function TopActionButton({
       onClick={onClick}
       aria-label={ariaLabel}
       aria-pressed={isActive}
-      className={`flex h-[42px] w-[42px] items-center justify-center rounded-full border text-white shadow-[0_4px_10px_rgba(28,107,59,0.16)] transition active:scale-[0.98] ${
+      className={`flex h-[42px] w-[42px] items-center justify-center rounded-full border shadow-[0_4px_10px_rgba(28,107,59,0.16)] transition active:scale-[0.98] ${
         isActive
-          ? "border-[#1C6B3B] bg-[#1C6B3B]"
+          ? "border-[#1C6B3B] bg-[#1C6B3B] text-white"
           : "border-[#D7E3DA] bg-white text-[#1C6B3B] hover:bg-[#F4F8F5]"
       }`}
     >
