@@ -21,6 +21,7 @@ import {
 import { translateText } from "@/lib/speech/demoTranslations";
 import { useAppStore } from "@/store/useAppStore";
 import { SettingsModal } from "@/components/vox/VoxUnified";
+import { VoiceSetupModal } from "@/components/vox/VoiceSetupModal";
 
 declare global {
   interface Window {
@@ -352,17 +353,14 @@ function App() {
       return;
     }
 
-    if (!isMicEnabled) {
-      setErrorText("Attiva prima il microfono dal tasto in alto a sinistra.");
-      return;
-    }
-
     stopSpeaking();
     setErrorText("");
     clearRestartTimeout();
 
+    // Request mic permission directly from big button click
     try {
       await requestMicrophonePermission();
+      setIsMicEnabled(true);
     } catch (error: any) {
       console.error(error);
       const permissionDenied =
@@ -410,7 +408,6 @@ function App() {
         const transcript = result[0]?.transcript?.trim?.() || "";
         if (!transcript) continue;
 
-        // Check audio level against sensitivity threshold
         const threshold = getSensitivityThreshold();
         if (currentAudioLevelRef.current < threshold) {
           console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
@@ -425,7 +422,7 @@ function App() {
 
     recognition.onerror = (event: any) => {
       if (event?.error === "aborted" || event?.error === "no-speech") {
-        if (shouldKeepListeningRef.current && isMicEnabled) {
+        if (shouldKeepListeningRef.current) {
           scheduleRestartListening();
         }
         return;
@@ -442,14 +439,14 @@ function App() {
 
       setStatus("error");
       setErrorText("Errore durante il riconoscimento vocale.");
-      if (shouldKeepListeningRef.current && isMicEnabled) {
+      if (shouldKeepListeningRef.current) {
         scheduleRestartListening();
       }
     };
 
     recognition.onend = () => {
       recognitionRef.current = null;
-      if (shouldKeepListeningRef.current && isMicEnabled) {
+      if (shouldKeepListeningRef.current) {
         setStatus("listening");
         scheduleRestartListening();
         return;
@@ -465,10 +462,12 @@ function App() {
       setStatus("error");
       setErrorText("Impossibile avviare l'ascolto vocale.");
     }
-  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, handleTranslate, isMicEnabled, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
+  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, handleTranslate, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
-  const handleMicPowerToggle = useCallback(async () => {
-    if (isMicEnabled) {
+  // Big mic button: toggles start/stop directly
+  const handleBigMicToggle = useCallback(async () => {
+    if (isMicEnabled && shouldKeepListeningRef.current) {
+      // Stop everything
       stopListening();
       stopSpeaking();
       releaseMicPermission();
@@ -477,26 +476,18 @@ function App() {
       return;
     }
 
-    try {
-      await requestMicrophonePermission();
-      setIsMicEnabled(true);
-      setStatus("idle");
-      setErrorText("");
-    } catch (error: any) {
-      console.error(error);
-      setStatus("error");
-      setErrorText("Permesso microfono negato dal dispositivo.");
-    }
-  }, [isMicEnabled, releaseMicPermission, requestMicrophonePermission, stopListening, stopSpeaking]);
+    // Start listening (requests permission directly)
+    await startListening();
+  }, [isMicEnabled, releaseMicPermission, startListening, stopListening, stopSpeaking]);
+
+  // Small mic button: opens voice setup
+  const handleSmallMicClick = useCallback(() => {
+    useAppStore.getState().setVoiceSetupOpen(true);
+  }, []);
 
   const handleContinuousListeningStart = useCallback(async () => {
-    if (!isMicEnabled) {
-      await handleMicPowerToggle();
-      if (!mediaStreamRef.current) return;
-    }
-
     await startListening();
-  }, [handleMicPowerToggle, isMicEnabled, startListening]);
+  }, [startListening]);
 
   const handleSend = useCallback(async () => {
     await handleTranslate(text);
@@ -600,7 +591,7 @@ function App() {
 
       if (meta && e.key.toLowerCase() === "m") {
         e.preventDefault();
-        void handleMicPowerToggle();
+        void handleBigMicToggle();
       }
 
       if (meta && e.key.toLowerCase() === "l") {
@@ -629,7 +620,7 @@ function App() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("vox:start-continuous-listening", onContinuousListeningStart);
     };
-  }, [handleContinuousListeningStart, handleDelete, handleMicPowerToggle, handleSend, swapLanguages]);
+  }, [handleContinuousListeningStart, handleDelete, handleBigMicToggle, handleSend, swapLanguages]);
 
   useEffect(() => {
     return () => {
@@ -676,7 +667,7 @@ function App() {
             </div>
 
             <div className="grid shrink-0 grid-cols-4 gap-2">
-              <TopActionButton ariaLabel="Power microphone" onClick={() => void handleMicPowerToggle()} isActive={isMicEnabled}>
+              <TopActionButton ariaLabel="Voice setup" onClick={handleSmallMicClick}>
                 <Mic className="h-[18px] w-[18px]" />
               </TopActionButton>
 
@@ -886,11 +877,19 @@ function App() {
                 )}
                 <button
                   type="button"
-                  onClick={() => void handleContinuousListeningStart()}
-                  className="relative flex h-28 w-28 items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] transition hover:bg-[#165330] active:scale-[0.98]"
-                  aria-label="Start continuous voice translation"
+                  onClick={() => void handleBigMicToggle()}
+                  className={`relative flex h-28 w-28 items-center justify-center rounded-full border transition active:scale-[0.98] ${
+                    isMicEnabled
+                      ? "border-red-500 bg-red-500 text-white shadow-[0_14px_32px_rgba(220,38,38,0.22)]"
+                      : "border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] hover:bg-[#165330]"
+                  }`}
+                  aria-label={isMicEnabled ? "Stop voice translation" : "Start voice translation"}
                 >
-                  <Mic className="h-12 w-12" strokeWidth={1.8} />
+                  {isMicEnabled ? (
+                    <div className="h-10 w-10 rounded-md bg-white" />
+                  ) : (
+                    <Mic className="h-12 w-12" strokeWidth={1.8} />
+                  )}
                 </button>
               </div>
 
@@ -908,7 +907,7 @@ function App() {
               )}
 
               <p className="mt-4 max-w-[300px] text-center text-[15px] leading-relaxed text-[#4E6358]">
-                Tocca il microfono grande per avviare l'ascolto continuo; si ferma solo spegnendo il tasto piccolo
+                {isMicEnabled ? "Ascolto attivo — tocca per fermare" : "Tocca il microfono per avviare la traduzione vocale"}
               </p>
 
               {!recognitionSupported && (
@@ -921,6 +920,7 @@ function App() {
         </main>
       </div>
       <SettingsModal />
+      <VoiceSetupModal />
     </div>
   );
 }

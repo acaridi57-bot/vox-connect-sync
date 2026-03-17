@@ -39,6 +39,10 @@ type AppState = {
   speechRate: number;
   speechPitch: number;
   userGender: UserGender;
+  eqBass: number;
+  eqMid: number;
+  eqTreble: number;
+  isVoiceSetupOpen: boolean;
   clearMessages: () => void;
   setStatus: (s: AppStatus) => void;
   setSourceLangCode: (code: string) => void;
@@ -55,6 +59,10 @@ type AppState = {
   setSpeechRate: (r: number) => void;
   setSpeechPitch: (p: number) => void;
   setUserGender: (g: UserGender) => void;
+  setEqBass: (v: number) => void;
+  setEqMid: (v: number) => void;
+  setEqTreble: (v: number) => void;
+  setVoiceSetupOpen: (o: boolean) => void;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -72,6 +80,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   speechRate: 0.9,
   speechPitch: 0.8,
   userGender: 'female',
+  eqBass: 0,
+  eqMid: 0,
+  eqTreble: 0,
+  isVoiceSetupOpen: false,
   clearMessages: () => set({ messages: [] }),
   setStatus: (s) => set({ status: s }),
   setSourceLangCode: (code) => set({ sourceLangCode: code }),
@@ -91,4 +103,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSpeechRate: (r) => set({ speechRate: r }),
   setSpeechPitch: (p) => set({ speechPitch: p }),
   setUserGender: (g) => set({ userGender: g }),
+  setEqBass: (v) => set({ eqBass: v }),
+  setEqMid: (v) => set({ eqMid: v }),
+  setEqTreble: (v) => set({ eqTreble: v }),
+  setVoiceSetupOpen: (o) => set({ isVoiceSetupOpen: o }),
 }));
