@@ -474,7 +474,7 @@ function App() {
         shouldKeepListeningRef.current = false;
         releaseMicPermission();
         setStatus("error");
-        setErrorText("Permesso microfono negato dal dispositivo.");
+        setErrorText("Microphone permission denied by the device.");
         return;
       }
 
