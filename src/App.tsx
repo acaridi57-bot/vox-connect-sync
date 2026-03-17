@@ -221,25 +221,8 @@ function App() {
     [stopSpeaking, toLang.code, toLang.speechCode]
   );
 
-  const loadConversation = useCallback(async (sid: string) => {
-    if (!sid) return;
-
-    try {
-      const response = await fetch(`/api/conversation/${sid}`);
-      if (!response.ok) return;
-
-      const data = await response.json();
-      const items = normalizeConversation(data);
-
-      if (items.length > 0) {
-        setConversation(items);
-        const last = items[items.length - 1];
-        setText(last.source || "");
-        setTranslatedText(last.translated || "");
-      }
-    } catch {
-      // se fallisce, amen
-    }
+  const loadConversation = useCallback(async (_sid: string) => {
+    // Conversation history is kept in local state only
   }, []);
 
   const handleTranslate = useCallback(
