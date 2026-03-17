@@ -559,6 +559,7 @@ function App() {
   const handleDelete = useCallback(async () => {
     stopListening();
     stopSpeaking();
+    dictatedTextRef.current = "";
     releaseMicPermission();
     setIsMicEnabled(false);
     setText("");
