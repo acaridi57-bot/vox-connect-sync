@@ -537,14 +537,6 @@ function App() {
       .trim();
     if (!cleanText) return;
 
-    stopSpeaking();
-    shouldKeepListeningRef.current = false;
-    clearRestartTimeout();
-    try { recognitionRef.current?.stop?.(); } catch {}
-    recognitionRef.current = null;
-    releaseMicPermission();
-    setIsMicEnabled(false);
-
     const unlockUtterance = new SpeechSynthesisUtterance("");
     unlockUtterance.volume = 0;
     window.speechSynthesis?.speak(unlockUtterance);
@@ -553,7 +545,7 @@ function App() {
     setText(cleanText);
     setTranslatedText("");
     await handleTranslate(cleanText);
-  }, [clearRestartTimeout, handleTranslate, releaseMicPermission, stopSpeaking, text]);
+  }, [handleTranslate, text]);
 
   const handleDelete = useCallback(async () => {
     stopListening();
