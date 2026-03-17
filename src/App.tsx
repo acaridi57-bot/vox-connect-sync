@@ -501,7 +501,7 @@ function App() {
       console.error(error);
       recognitionRef.current = null;
       setStatus("error");
-      setErrorText("Impossibile avviare l'ascolto vocale.");
+      setErrorText("Unable to start voice listening.");
     }
   }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
