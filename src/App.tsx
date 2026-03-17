@@ -19,6 +19,8 @@ import {
   Volume2,
 } from "lucide-react";
 import { translateText } from "@/lib/speech/demoTranslations";
+import { useAppStore } from "@/store/useAppStore";
+import { SettingsModal } from "@/components/vox/VoxUnified";
 
 declare global {
   interface Window {
@@ -78,8 +80,7 @@ function App() {
   const [translatedText, setTranslatedText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorText, setErrorText] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
-  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [autoSpeak] = useState(true);
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
   const [sessionId, setSessionId] = useState("");
 
@@ -300,7 +301,7 @@ function App() {
     setTranslatedText("");
     setConversation([]);
     setErrorText("");
-    setShowSettings(false);
+    useAppStore.getState().setSettingsOpen(false);
     setStatus("idle");
 
     const newSessionId = createId();
@@ -459,8 +460,7 @@ function App() {
               <TopActionButton
                 ariaLabel="Settings"
                 onClick={() => {
-                  console.log('[DEBUG] Settings clicked, showSettings:', showSettings);
-                  setShowSettings((prev) => !prev);
+                  useAppStore.getState().setSettingsOpen(true);
                 }}
               >
                 <Settings className="h-[18px] w-[18px]" />
@@ -478,35 +478,6 @@ function App() {
             </h1>
           </div>
 
-          {showSettings && (
-            <div className="mt-3 rounded-[18px] border border-[#D7E3DA] bg-white/85 p-3 shadow-[0_8px_24px_rgba(22,42,28,0.08)]">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[14px] font-semibold text-[#243428]">
-                    Auto voice playback
-                  </p>
-                  <p className="text-[12px] text-[#61736A]">
-                    Legge la traduzione appena arriva
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setAutoSpeak((prev) => !prev)}
-                  className={`relative h-7 w-12 rounded-full transition ${
-                    autoSpeak ? "bg-[#1C6B3B]" : "bg-[#CAD8CE]"
-                  }`}
-                  aria-label="Toggle auto voice playback"
-                >
-                  <span
-                    className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
-                      autoSpeak ? "left-6" : "left-1"
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-          )}
         </header>
 
         <section className="mb-5">
@@ -688,6 +659,7 @@ function App() {
           </section>
         </main>
       </div>
+      <SettingsModal />
     </div>
   );
 }
