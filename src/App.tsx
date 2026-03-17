@@ -139,6 +139,27 @@ function App() {
     }
   }, [clearRestartTimeout]);
 
+  const startAudioMonitor = useCallback((stream: MediaStream) => {
+    if (audioContextRef.current) return;
+    const ctx = new AudioContext();
+    audioContextRef.current = ctx;
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.8;
+    source.connect(analyser);
+    analyserRef.current = analyser;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const monitor = () => {
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+      currentAudioLevelRef.current = Math.min(sum / dataArray.length / 128, 1);
+      rafRef.current = requestAnimationFrame(monitor);
+    };
+    monitor();
+  }, []);
+
   const requestMicrophonePermission = useCallback(async () => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       throw new Error("MicrophoneUnavailable");
@@ -150,7 +171,14 @@ function App() {
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStreamRef.current = stream;
+    startAudioMonitor(stream);
     return stream;
+  }, [startAudioMonitor]);
+
+  const getSensitivityThreshold = useCallback(() => {
+    const sensitivity = useAppStore.getState().sensitivity;
+    // sensitivity 0 = very high threshold (hard to trigger), 100 = very low threshold (easy to trigger)
+    return (100 - sensitivity) / 100 * 0.3 + 0.02;
   }, []);
 
   const getStatusLabel = useCallback(() => {
