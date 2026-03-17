@@ -232,14 +232,22 @@ function App() {
       const utterance = new SpeechSynthesisUtterance(content);
       utterance.lang = toLang.speechCode;
 
-      const voices = window.speechSynthesis.getVoices();
-      const exactVoice =
-        voices.find((voice) => voice.lang === toLang.speechCode) ||
-        voices.find((voice) => voice.lang.startsWith(toLang.code));
+      // Apply voice settings from store
+      const store = useAppStore.getState();
+      const allVoices = window.speechSynthesis.getVoices();
 
-      if (exactVoice) {
-        utterance.voice = exactVoice;
-      }
+      // Try to use the voice selected in settings
+      const selectedVoice = allVoices.find((v) => v.name === store.voiceName);
+      // Fallback: find a Google voice or any voice for the target language
+      const fallbackVoice =
+        allVoices.find((v) => v.name.toLowerCase().includes("google") && v.lang.startsWith(toLang.code)) ||
+        allVoices.find((v) => v.lang === toLang.speechCode) ||
+        allVoices.find((v) => v.lang.startsWith(toLang.code));
+
+      utterance.voice = selectedVoice || fallbackVoice || null;
+      utterance.rate = store.speechRate;
+      utterance.pitch = store.speechPitch;
+      utterance.volume = store.volume / 100;
 
       utterance.onstart = () => setStatus("speaking");
       utterance.onend = () => {
