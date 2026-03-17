@@ -89,6 +89,10 @@ function App() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const shouldKeepListeningRef = useRef(false);
   const restartTimeoutRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const currentAudioLevelRef = useRef(0);
+  const rafRef = useRef<number>(0);
 
   const canSwap = useMemo(
     () => fromLang.code !== toLang.code,
@@ -113,6 +117,11 @@ function App() {
   }, []);
 
   const releaseMicPermission = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    audioContextRef.current?.close();
+    audioContextRef.current = null;
+    analyserRef.current = null;
+    currentAudioLevelRef.current = 0;
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     mediaStreamRef.current = null;
   }, []);
@@ -130,6 +139,27 @@ function App() {
     }
   }, [clearRestartTimeout]);
 
+  const startAudioMonitor = useCallback((stream: MediaStream) => {
+    if (audioContextRef.current) return;
+    const ctx = new AudioContext();
+    audioContextRef.current = ctx;
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.8;
+    source.connect(analyser);
+    analyserRef.current = analyser;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const monitor = () => {
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+      currentAudioLevelRef.current = Math.min(sum / dataArray.length / 128, 1);
+      rafRef.current = requestAnimationFrame(monitor);
+    };
+    monitor();
+  }, []);
+
   const requestMicrophonePermission = useCallback(async () => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       throw new Error("MicrophoneUnavailable");
@@ -141,7 +171,14 @@ function App() {
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStreamRef.current = stream;
+    startAudioMonitor(stream);
     return stream;
+  }, [startAudioMonitor]);
+
+  const getSensitivityThreshold = useCallback(() => {
+    const sensitivity = useAppStore.getState().sensitivity;
+    // sensitivity 0 = very high threshold (hard to trigger), 100 = very low threshold (easy to trigger)
+    return (100 - sensitivity) / 100 * 0.3 + 0.02;
   }, []);
 
   const getStatusLabel = useCallback(() => {
@@ -359,6 +396,13 @@ function App() {
         const transcript = result[0]?.transcript?.trim?.() || "";
         if (!transcript) continue;
 
+        // Check audio level against sensitivity threshold
+        const threshold = getSensitivityThreshold();
+        if (currentAudioLevelRef.current < threshold) {
+          console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
+          continue;
+        }
+
         setText(transcript);
         void handleTranslate(transcript);
         break;
@@ -407,7 +451,7 @@ function App() {
       setStatus("error");
       setErrorText("Impossibile avviare l'ascolto vocale.");
     }
-  }, [clearRestartTimeout, fromLang.speechCode, handleTranslate, isMicEnabled, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
+  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, handleTranslate, isMicEnabled, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
   const handleMicPowerToggle = useCallback(async () => {
     if (isMicEnabled) {
