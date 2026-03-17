@@ -618,7 +618,7 @@ function App() {
             </div>
 
             <div className="grid shrink-0 grid-cols-4 gap-2">
-              <TopActionButton ariaLabel="Voice" onClick={handleMicClick}>
+              <TopActionButton ariaLabel="Power microphone" onClick={() => void handleMicPowerToggle()} isActive={isMicEnabled}>
                 <Mic className="h-[18px] w-[18px]" />
               </TopActionButton>
 
@@ -700,11 +700,10 @@ function App() {
               {!translatedText ? (
                 <div className="mx-auto max-w-xs">
                   <h2 className="text-[20px] font-semibold leading-snug text-[#2A4A35]">
-                    Tap the microphone to start translating
+                    Tocca il microfono centrale per avviare la traduzione vocale
                   </h2>
                   <p className="mt-3 text-[15px] leading-relaxed text-[#61736A]">
-                    Speak naturally — Speak &amp; Translate Live will detect and
-                    translate in real-time
+                    Il tasto piccolo accende o spegne il microfono, quello grande avvia l'ascolto continuo
                   </p>
                 </div>
               ) : (
@@ -807,16 +806,15 @@ function App() {
             <div className="mt-6 flex flex-col items-center justify-center">
               <button
                 type="button"
-                onClick={handleMicClick}
+                onClick={() => void handleContinuousListeningStart()}
                 className="flex h-28 w-28 items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] transition hover:bg-[#165330] active:scale-[0.98]"
-                aria-label="Start voice translation"
+                aria-label="Start continuous voice translation"
               >
                 <Mic className="h-12 w-12" strokeWidth={1.8} />
               </button>
 
               <p className="mt-4 max-w-[300px] text-center text-[15px] leading-relaxed text-[#4E6358]">
-                Speak naturally — Speak &amp; Translate Live listens and
-                translates
+                Tocca il microfono grande per avviare l'ascolto continuo; si ferma solo spegnendo il tasto piccolo
               </p>
 
               {!recognitionSupported && (
