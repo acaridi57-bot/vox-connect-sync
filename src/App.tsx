@@ -961,7 +961,7 @@ function App() {
                   type="button"
                   onClick={() => void handleSend()}
                   className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border-2 border-[#1C6B3B] bg-white text-[#1C6B3B] shadow-[0_14px_32px_rgba(28,107,59,0.12)] transition hover:bg-[#F4F8F5] active:scale-[0.98]"
-                  aria-label="Traduci testo"
+                  aria-label="Translate text"
                 >
                   <Languages className="h-10 w-10" strokeWidth={1.8} />
                   <span className="mt-1 text-[13px] font-bold tracking-wide">TRANSLATE</span>
