@@ -251,33 +251,10 @@ function App() {
       setStatus("translating");
 
       try {
-        const response = await fetch("/api/translate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text: cleanText,
-            source_lang: fromLang.code,
-            target_lang: toLang.code,
-            sourceLanguage: fromLang.code,
-            targetLanguage: toLang.code,
-            from_language: fromLang.code,
-            to_language: toLang.code,
-            session_id: sessionId,
-          }),
-        });
+        const translated = await translateText(cleanText, fromLang.code, toLang.code);
 
-        if (!response.ok) {
-          const raw = await response.text();
-          throw new Error(raw || "Translation request failed");
-        }
-
-        const data = await response.json();
-        const translated = parseTranslation(data);
-
-        if (!translated) {
-          throw new Error("No translation returned by /api/translate");
+        if (!translated || translated === cleanText) {
+          throw new Error("No translation returned");
         }
 
         setText(cleanText);
@@ -303,7 +280,7 @@ function App() {
         console.error(error);
         setStatus("error");
         setErrorText(
-          "Traduzione non riuscita. Controlla endpoint /api/translate o payload."
+          "Traduzione non riuscita. Riprova tra qualche secondo."
         );
       }
     },
@@ -311,7 +288,6 @@ function App() {
       autoSpeak,
       fromLang.code,
       fromLang.label,
-      sessionId,
       speakText,
       text,
       toLang.code,
