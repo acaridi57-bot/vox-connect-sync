@@ -663,8 +663,9 @@ function App() {
       <SettingsModal />
     </div>
   );
+}
 
-function TopActionButton({
+
   children,
   ariaLabel,
   onClick,
