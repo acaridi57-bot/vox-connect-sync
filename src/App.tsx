@@ -522,7 +522,11 @@ function App() {
   }, [startListening]);
 
   const handleSend = useCallback(async () => {
-    await handleTranslate(text);
+    // Clean interim brackets before translating
+    const cleanText = text.replace(/\s*\[.*?\]/g, "").trim();
+    if (!cleanText) return;
+    setText(cleanText);
+    await handleTranslate(cleanText);
   }, [handleTranslate, text]);
 
   const handleDelete = useCallback(async () => {
