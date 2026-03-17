@@ -25,11 +25,9 @@ const APP_LANGS = ["it", "en", "es", "fr", "de", "zh", "sq"];
 
 function filterVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
   const filtered = all.filter((v) => {
-    const lang = v.lang?.toLowerCase().slice(0, 2) ?? "";
     const name = v.name.toLowerCase();
-    if (!APP_LANGS.includes(lang)) return false;
     const isGoogle = name.includes("google");
-    const isAlice = name === "alice" && lang === "it";
+    const isAlice = name.toLowerCase() === "alice";
     return isGoogle || isAlice;
   });
   filtered.sort((a, b) => {
@@ -38,7 +36,7 @@ function filterVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
     if (aAlice !== bAlice) return aAlice - bAlice;
     return a.lang.localeCompare(b.lang);
   });
-  return filtered;
+  return filtered.length > 0 ? filtered : all;
 }
 
 function bestVoiceForLang(voices: SpeechSynthesisVoice[], langCode: string, gender: "female" | "male"): SpeechSynthesisVoice | undefined {
