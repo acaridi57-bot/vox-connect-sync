@@ -502,7 +502,7 @@ function App() {
       setStatus("error");
       setErrorText("Unable to start voice listening.");
     }
-  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
+  }, [clearRestartTimeout, fromLang.speechCode, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
   // Big mic button: toggles start/stop directly
   const handleBigMicToggle = useCallback(async () => {
