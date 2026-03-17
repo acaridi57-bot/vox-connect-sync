@@ -103,4 +103,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSpeechRate: (r) => set({ speechRate: r }),
   setSpeechPitch: (p) => set({ speechPitch: p }),
   setUserGender: (g) => set({ userGender: g }),
+  setEqBass: (v) => set({ eqBass: v }),
+  setEqMid: (v) => set({ eqMid: v }),
+  setEqTreble: (v) => set({ eqTreble: v }),
+  setVoiceSetupOpen: (o) => set({ isVoiceSetupOpen: o }),
 }));
