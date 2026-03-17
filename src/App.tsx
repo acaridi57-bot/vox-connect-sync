@@ -184,11 +184,6 @@ function App() {
     return stream;
   }, [startAudioMonitor]);
 
-  const getSensitivityThreshold = useCallback(() => {
-    const sensitivity = useAppStore.getState().sensitivity;
-    // sensitivity 0 = very high threshold (hard to trigger), 100 = very low threshold (easy to trigger)
-    return (100 - sensitivity) / 100 * 0.3 + 0.02;
-  }, []);
 
   const getStatusLabel = useCallback(() => {
     if (!isMicEnabled) return "Microphone off";
@@ -423,7 +418,7 @@ function App() {
     recognitionRef.current = recognition;
 
     recognition.lang = fromLang.speechCode;
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
@@ -432,33 +427,37 @@ function App() {
     };
 
     recognition.onresult = (event: any) => {
+      let finalizedText = dictatedTextRef.current;
+      let interimTranscript = "";
+
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results?.[i];
         const transcript = result?.[0]?.transcript?.trim?.() || "";
         if (!transcript) continue;
 
         if (result?.isFinal) {
-          const threshold = getSensitivityThreshold();
-          if (currentAudioLevelRef.current < threshold) {
-            console.log(`[VT] Audio level ${currentAudioLevelRef.current.toFixed(3)} below threshold ${threshold.toFixed(3)}, ignoring`);
-            continue;
-          }
-
-          const nextText = dictatedTextRef.current
-            ? `${dictatedTextRef.current} ${transcript}`
-            : transcript;
-
-          dictatedTextRef.current = nextText;
-          setText(nextText);
-          setTranslatedText("");
+          finalizedText = finalizedText ? `${finalizedText} ${transcript}` : transcript;
         } else {
-          const previewText = dictatedTextRef.current
-            ? `${dictatedTextRef.current} [${transcript}]`
-            : `[${transcript}]`;
-          setText(previewText);
+          interimTranscript = interimTranscript
+            ? `${interimTranscript} ${transcript}`
+            : transcript;
         }
-        break;
       }
+
+      const normalizedFinalText = finalizedText.replace(/\s+/g, " ").trim();
+      dictatedTextRef.current = normalizedFinalText;
+      setTranslatedText("");
+
+      if (interimTranscript) {
+        setText(
+          normalizedFinalText
+            ? `${normalizedFinalText} [${interimTranscript}]`
+            : `[${interimTranscript}]`
+        );
+        return;
+      }
+
+      setText(normalizedFinalText);
     };
 
     recognition.onerror = (event: any) => {
@@ -503,7 +502,7 @@ function App() {
       setStatus("error");
       setErrorText("Unable to start voice listening.");
     }
-  }, [clearRestartTimeout, fromLang.speechCode, getSensitivityThreshold, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
+  }, [clearRestartTimeout, fromLang.speechCode, recognitionSupported, releaseMicPermission, requestMicrophonePermission, scheduleRestartListening, stopSpeaking]);
 
   // Big mic button: toggles start/stop directly
   const handleBigMicToggle = useCallback(async () => {
@@ -538,14 +537,6 @@ function App() {
       .trim();
     if (!cleanText) return;
 
-    stopSpeaking();
-    shouldKeepListeningRef.current = false;
-    clearRestartTimeout();
-    try { recognitionRef.current?.stop?.(); } catch {}
-    recognitionRef.current = null;
-    releaseMicPermission();
-    setIsMicEnabled(false);
-
     const unlockUtterance = new SpeechSynthesisUtterance("");
     unlockUtterance.volume = 0;
     window.speechSynthesis?.speak(unlockUtterance);
@@ -554,7 +545,7 @@ function App() {
     setText(cleanText);
     setTranslatedText("");
     await handleTranslate(cleanText);
-  }, [clearRestartTimeout, handleTranslate, releaseMicPermission, stopSpeaking, text]);
+  }, [handleTranslate, text]);
 
   const handleDelete = useCallback(async () => {
     stopListening();
