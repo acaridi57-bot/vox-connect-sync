@@ -594,7 +594,7 @@ function App() {
 
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(content);
-        alert("Testo copiato negli appunti");
+        alert("Text copied to clipboard");
         return;
       }
 
