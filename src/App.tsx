@@ -877,11 +877,19 @@ function App() {
                 )}
                 <button
                   type="button"
-                  onClick={() => void handleContinuousListeningStart()}
-                  className="relative flex h-28 w-28 items-center justify-center rounded-full border border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] transition hover:bg-[#165330] active:scale-[0.98]"
-                  aria-label="Start continuous voice translation"
+                  onClick={() => void handleBigMicToggle()}
+                  className={`relative flex h-28 w-28 items-center justify-center rounded-full border transition active:scale-[0.98] ${
+                    isMicEnabled
+                      ? "border-red-500 bg-red-500 text-white shadow-[0_14px_32px_rgba(220,38,38,0.22)]"
+                      : "border-[#1C6B3B] bg-[#1C6B3B] text-white shadow-[0_14px_32px_rgba(28,107,59,0.22)] hover:bg-[#165330]"
+                  }`}
+                  aria-label={isMicEnabled ? "Stop voice translation" : "Start voice translation"}
                 >
-                  <Mic className="h-12 w-12" strokeWidth={1.8} />
+                  {isMicEnabled ? (
+                    <div className="h-10 w-10 rounded-md bg-white" />
+                  ) : (
+                    <Mic className="h-12 w-12" strokeWidth={1.8} />
+                  )}
                 </button>
               </div>
 
