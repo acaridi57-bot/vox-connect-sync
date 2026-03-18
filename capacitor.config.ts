@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'VoxTranslate',
   webDir: 'dist',
   server: {
-    url: 'https://cd1d082a-fee6-4dbf-b753-ff1f6d59723d.lovableproject.com?forceHideBadge=true',
+    url: 'https://speaklivetranslate.it',
     cleartext: true,
   },
   plugins: {
