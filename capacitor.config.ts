@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.cd1d082afee64dbfb753ff1f6d59723d',
+  appId: 'it.speaklivetranslate',
   appName: 'VoxTranslate',
   webDir: 'dist',
   server: {
