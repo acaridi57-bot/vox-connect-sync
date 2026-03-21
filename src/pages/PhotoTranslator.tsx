@@ -12,6 +12,7 @@ export default function PhotoTranslator() {
   const [extractedText, setExtractedText] = useState("");
   const [translatedText, setTranslatedText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
