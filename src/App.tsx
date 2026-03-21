@@ -89,6 +89,7 @@ const createId = () => {
 };
 
 function App() {
+  const navigate = useNavigate();
   const [fromLang, setFromLang] = useState<Language>(languages[0]);
   const [toLang, setToLang] = useState<Language>(languages[1]);
   const [text, setText] = useState("");
