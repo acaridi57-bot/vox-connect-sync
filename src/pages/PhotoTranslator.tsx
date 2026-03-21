@@ -32,22 +32,33 @@ export default function PhotoTranslator() {
     setIsProcessing(true);
 
     try {
-      // Use canvas to extract text via OCR simulation
-      // In production, integrate with a real OCR API (Google Vision, Tesseract.js)
-      // For demo, we simulate text extraction
-      await new Promise((r) => setTimeout(r, 1500));
-      
-      const demoTexts = [
-        "Benvenuto nel nostro ristorante. Il menu del giorno include pasta alla carbonara, insalata mista e tiramisù.",
-        "Welcome to the museum. Please do not touch the artworks. Photography is allowed without flash.",
-        "Horario de apertura: Lunes a Viernes 9:00 - 18:00. Sábados 10:00 - 14:00.",
-        "Bienvenue à Paris. La Tour Eiffel est ouverte tous les jours de 9h30 à 23h45.",
-        "Willkommen in Berlin. Das Brandenburger Tor ist eines der bekanntesten Wahrzeichen Deutschlands.",
-      ];
-      const randomText = demoTexts[Math.floor(Math.random() * demoTexts.length)];
-      setExtractedText(randomText);
+      // OCR with Tesseract.js
+      const langMap: Record<string, string> = {
+        "it-IT": "ita", "en-US": "eng", "es-ES": "spa",
+        "fr-FR": "fra", "de-DE": "deu", "zh-CN": "chi_sim", "sq-AL": "sqi",
+      };
+      const ocrLang = langMap[sourceLangCode] || "eng";
 
-      const translated = await translateText(randomText, sourceLangCode, targetLangCode);
+      const worker = await createWorker(ocrLang, 1, {
+        logger: (m) => {
+          if (m.status === "recognizing text") {
+            setOcrProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
+
+      const { data: { text: ocrText } } = await worker.recognize(url);
+      await worker.terminate();
+
+      const cleanText = ocrText.trim();
+      if (!cleanText) {
+        setError("Nessun testo rilevato nell'immagine. Prova con un'immagine più nitida.");
+        setIsProcessing(false);
+        return;
+      }
+
+      setExtractedText(cleanText);
+      const translated = await translateText(cleanText.slice(0, 2000), sourceLangCode, targetLangCode);
       setTranslatedText(translated);
     } catch {
       setError("Errore durante l'elaborazione dell'immagine. Riprova.");
