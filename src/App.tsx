@@ -22,16 +22,6 @@ import {
   Trash2,
   Volume2,
 } from "lucide-react";
-  ArrowRightLeft,
-  ChevronDown,
-  Languages,
-  Mic,
-  Send,
-  Settings,
-  Share2,
-  Trash2,
-  Volume2,
-} from "lucide-react";
 import { translateText } from "@/lib/speech/demoTranslations";
 import { useAppStore } from "@/store/useAppStore";
 import { SettingsModal } from "@/components/vox/VoxUnified";
