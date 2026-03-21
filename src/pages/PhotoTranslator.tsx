@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { ArrowLeft, Camera, Upload, Languages, Copy, Volume2 } from "lucide-react";
+import { createWorker } from "tesseract.js";
 import { useNavigate } from "react-router-dom";
 import { useAppStore, LANGUAGES } from "@/store/useAppStore";
 import { translateText } from "@/lib/speech/demoTranslations";
@@ -11,6 +12,7 @@ export default function PhotoTranslator() {
   const [extractedText, setExtractedText] = useState("");
   const [translatedText, setTranslatedText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -30,22 +32,33 @@ export default function PhotoTranslator() {
     setIsProcessing(true);
 
     try {
-      // Use canvas to extract text via OCR simulation
-      // In production, integrate with a real OCR API (Google Vision, Tesseract.js)
-      // For demo, we simulate text extraction
-      await new Promise((r) => setTimeout(r, 1500));
-      
-      const demoTexts = [
-        "Benvenuto nel nostro ristorante. Il menu del giorno include pasta alla carbonara, insalata mista e tiramisù.",
-        "Welcome to the museum. Please do not touch the artworks. Photography is allowed without flash.",
-        "Horario de apertura: Lunes a Viernes 9:00 - 18:00. Sábados 10:00 - 14:00.",
-        "Bienvenue à Paris. La Tour Eiffel est ouverte tous les jours de 9h30 à 23h45.",
-        "Willkommen in Berlin. Das Brandenburger Tor ist eines der bekanntesten Wahrzeichen Deutschlands.",
-      ];
-      const randomText = demoTexts[Math.floor(Math.random() * demoTexts.length)];
-      setExtractedText(randomText);
+      // OCR with Tesseract.js
+      const langMap: Record<string, string> = {
+        "it-IT": "ita", "en-US": "eng", "es-ES": "spa",
+        "fr-FR": "fra", "de-DE": "deu", "zh-CN": "chi_sim", "sq-AL": "sqi",
+      };
+      const ocrLang = langMap[sourceLangCode] || "eng";
 
-      const translated = await translateText(randomText, sourceLangCode, targetLangCode);
+      const worker = await createWorker(ocrLang, 1, {
+        logger: (m) => {
+          if (m.status === "recognizing text") {
+            setOcrProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
+
+      const { data: { text: ocrText } } = await worker.recognize(url);
+      await worker.terminate();
+
+      const cleanText = ocrText.trim();
+      if (!cleanText) {
+        setError("Nessun testo rilevato nell'immagine. Prova con un'immagine più nitida.");
+        setIsProcessing(false);
+        return;
+      }
+
+      setExtractedText(cleanText);
+      const translated = await translateText(cleanText.slice(0, 2000), sourceLangCode, targetLangCode);
       setTranslatedText(translated);
     } catch {
       setError("Errore durante l'elaborazione dell'immagine. Riprova.");
@@ -163,9 +176,16 @@ export default function PhotoTranslator() {
             </div>
 
             {isProcessing && (
-              <div className="flex items-center justify-center gap-2 py-4">
+              <div className="flex flex-col items-center justify-center gap-2 py-4">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#1C6B3B] border-t-transparent" />
-                <span className="text-[15px] text-[#61736A]">Elaborazione in corso...</span>
+                <span className="text-[15px] text-[#61736A]">
+                  {ocrProgress > 0 ? `Riconoscimento testo... ${ocrProgress}%` : "Caricamento OCR..."}
+                </span>
+                {ocrProgress > 0 && (
+                  <div className="w-48 h-2 rounded-full bg-[#D7E3DA] overflow-hidden">
+                    <div className="h-full rounded-full bg-[#1C6B3B] transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+                  </div>
+                )}
               </div>
             )}
 
