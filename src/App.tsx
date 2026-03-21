@@ -8,9 +8,12 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowRightLeft,
+  Camera,
   ChevronDown,
+  FileText,
   Languages,
   Mic,
   Send,
@@ -76,6 +79,7 @@ const createId = () => {
 };
 
 function App() {
+  const navigate = useNavigate();
   const [fromLang, setFromLang] = useState<Language>(languages[0]);
   const [toLang, setToLang] = useState<Language>(languages[1]);
   const [text, setText] = useState("");
@@ -772,6 +776,24 @@ function App() {
           </div>
 
         </header>
+
+        {/* Navigation buttons */}
+        <section className="mb-4 flex gap-3">
+          <button
+            onClick={() => navigate("/photo")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-[18px] border border-[#D7E3DA] bg-white/80 px-4 py-3.5 text-[15px] font-semibold text-[#1C6B3B] shadow-[0_4px_12px_rgba(22,42,28,0.06)] transition hover:bg-[#F4F8F5] active:scale-[0.98]"
+          >
+            <Camera className="h-5 w-5" />
+            Traduttore Foto
+          </button>
+          <button
+            onClick={() => navigate("/pdf")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-[18px] border border-[#D7E3DA] bg-white/80 px-4 py-3.5 text-[15px] font-semibold text-[#1C6B3B] shadow-[0_4px_12px_rgba(22,42,28,0.06)] transition hover:bg-[#F4F8F5] active:scale-[0.98]"
+          >
+            <FileText className="h-5 w-5" />
+            Traduttore PDF
+          </button>
+        </section>
 
         <section className="mb-5">
           <div className="flex items-center gap-3">
