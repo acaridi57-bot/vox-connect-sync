@@ -176,9 +176,16 @@ export default function PhotoTranslator() {
             </div>
 
             {isProcessing && (
-              <div className="flex items-center justify-center gap-2 py-4">
+              <div className="flex flex-col items-center justify-center gap-2 py-4">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#1C6B3B] border-t-transparent" />
-                <span className="text-[15px] text-[#61736A]">Elaborazione in corso...</span>
+                <span className="text-[15px] text-[#61736A]">
+                  {ocrProgress > 0 ? `Riconoscimento testo... ${ocrProgress}%` : "Caricamento OCR..."}
+                </span>
+                {ocrProgress > 0 && (
+                  <div className="w-48 h-2 rounded-full bg-[#D7E3DA] overflow-hidden">
+                    <div className="h-full rounded-full bg-[#1C6B3B] transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+                  </div>
+                )}
               </div>
             )}
 
