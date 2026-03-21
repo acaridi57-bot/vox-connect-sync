@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { ArrowLeft, Camera, Upload, Languages, Copy, Volume2 } from "lucide-react";
+import { createWorker } from "tesseract.js";
 import { useNavigate } from "react-router-dom";
 import { useAppStore, LANGUAGES } from "@/store/useAppStore";
 import { translateText } from "@/lib/speech/demoTranslations";
