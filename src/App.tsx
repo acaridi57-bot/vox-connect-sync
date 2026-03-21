@@ -8,7 +8,20 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import {
+  ArrowRightLeft,
+  Camera,
+  ChevronDown,
+  FileText,
+  Languages,
+  Mic,
+  Send,
+  Settings,
+  Share2,
+  Trash2,
+  Volume2,
+} from "lucide-react";
   ArrowRightLeft,
   ChevronDown,
   Languages,
