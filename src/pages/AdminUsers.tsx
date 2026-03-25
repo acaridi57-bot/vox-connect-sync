@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Plus, RefreshCw, Pencil, Key, Trash2, Search, DollarSign, TrendingUp, Users as UsersIcon, CreditCard, Globe, Smartphone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { RoleBadge } from '@/components/auth/RoleBadge';
 import { PlanBadge, StatusBadge } from '@/components/subscription/PlanBadge';
 import { useAuthStore, getMockUsers } from '@/store/useAuthStore';
 import { getProviderLabel } from '@/config/subscriptions';
+import { useToast } from '@/hooks/use-toast';
 import type { AppUser, UserRole } from '@/types/auth';
 import type { BillingProvider } from '@/types/billing';
 
@@ -37,7 +38,9 @@ function ProviderBadge({ provider }: { provider: BillingProvider }) {
 
 export default function AdminUsers() {
   const currentUser = useAuthStore(s => s.currentUser);
+  const { toast } = useToast();
   const [users, setUsers] = useState<AppUser[]>(getMockUsers());
+  const [refreshing, setRefreshing] = useState(false);
   const [userFormOpen, setUserFormOpen] = useState(false);
   const [pwFormOpen, setPwFormOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -51,7 +54,14 @@ export default function AdminUsers() {
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  const handleRefresh = useCallback(() => setUsers(getMockUsers()), []);
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setUsers(getMockUsers());
+      setRefreshing(false);
+      toast({ title: '✅ Lista aggiornata', description: `${getMockUsers().length} utenti caricati` });
+    }, 600);
+  }, [toast]);
 
   const revenue = useMemo(() => {
     const now = new Date();
@@ -145,7 +155,7 @@ export default function AdminUsers() {
           backTo="/admin"
           actions={
             <>
-              <Button variant="outline" size="sm" onClick={handleRefresh}><RefreshCw size={14} className="mr-1" /> Aggiorna</Button>
+              <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}><RefreshCw size={14} className={`mr-1 ${refreshing ? 'animate-spin' : ''}`} /> {refreshing ? 'Aggiornando...' : 'Aggiorna'}</Button>
               <Button size="sm" onClick={openNew}><Plus size={14} className="mr-1" /> Nuovo Utente</Button>
             </>
           }
