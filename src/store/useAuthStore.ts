@@ -17,7 +17,7 @@ type AuthState = {
 const MOCK_ADMIN: AppUser = {
   id: '1',
   name: 'Admin ACaridi',
-  email: 'admin@speaklivetranslate.it',
+  email: 'acdigital.app@gmail.com',
   role: 'admin',
   whatsapp: '+39 333 1234567',
   notifications: true,
