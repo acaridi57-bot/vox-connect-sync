@@ -83,6 +83,11 @@ const MOCK_USERS: AppUser[] = [
 
 export const getMockUsers = () => MOCK_USERS;
 
+export const isInTrial = (user: AppUser): boolean => {
+  if (!user.trialEnd) return false;
+  return new Date() <= new Date(user.trialEnd);
+};
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   currentUser: null,
   isAuthenticated: false,
@@ -118,6 +123,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   register: async (data) => {
+    const trialStart = new Date().toISOString();
+    const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
     const newUser: AppUser = {
       id: Date.now().toString(),
       name: data.name,
@@ -127,8 +134,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       notifications: true,
       registeredAt: new Date().toISOString(),
       lastAccess: new Date().toISOString(),
-      plan: 'free',
-      subscriptionStatus: 'expired',
+      plan: 'trial',
+      subscriptionStatus: 'in_trial',
+      trialStart,
+      trialEnd,
       totalPaid: 0,
       balance: 0,
       transactions: [],
