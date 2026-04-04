@@ -7,6 +7,7 @@ import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import Admin from "./pages/Admin.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
+import BankCoordinates from "./pages/BankCoordinates.tsx";
 import SettingsPage from "./pages/Settings.tsx";
 import Pricing from "./pages/Pricing.tsx";
 import Upgrade from "./pages/Upgrade.tsx";
@@ -29,6 +30,7 @@ createRoot(document.getElementById("root")!).render(
       <Route path="/settings" element={<AuthGuard><SettingsPage /></AuthGuard>} />
       <Route path="/admin" element={<AuthGuard requiredRole="admin"><Admin /></AuthGuard>} />
       <Route path="/admin/users" element={<AuthGuard requiredRole="admin"><AdminUsers /></AuthGuard>} />
+      <Route path="/admin/bancari" element={<AuthGuard requiredRole="admin"><BankCoordinates /></AuthGuard>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </BrowserRouter>
