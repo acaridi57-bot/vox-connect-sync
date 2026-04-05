@@ -34,10 +34,10 @@ import type { BillingProvider } from '@/types/billing';
 // ── Cross-app revenue ─────────────────────────────────────────────────────────
 
 const CROSS_APP_APIS: Record<string, { label: string; url: string }> = {
-  gestionepassword: { label: 'Gestione Password', url: 'https://bilingual-pwd-mgr.emergent.host/admin/revenue' },
-  gestionescadenze: { label: 'Gestione Scadenze', url: 'https://gestione-scadenze-app.vercel.app/api/admin/revenue' },
+  gestionepassword: { label: 'Gestione Password', url: 'https://gestionepassword.it/admin/revenue' },
+  gestionescadenze: { label: 'Gestione Scadenze', url: 'https://gestionescadenze.app/api/admin/revenue' },
   speakeasy: { label: 'SpeakEasy', url: '' }, // computed locally
-  librifree: { label: 'Librifree', url: 'https://librifree-backend.up.railway.app/api/admin/revenue' },
+  librifree: { label: 'Librifree', url: 'https://librifree.it/api/admin/revenue' },
 };
 
 interface CrossAppData { amount: number; users: number; loading: boolean; }
