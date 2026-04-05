@@ -46,6 +46,17 @@ interface AdminLog {
 
 const EMPTY_FORM = { holder: '', bankName: '', iban: '', bic: '', accountNumber: '', notes: '' };
 
+const DEFAULT_ACCOUNT: BankAccount = {
+  id: 'default-caridi',
+  holder: 'CARIDI ANTONIO',
+  bankName: 'Banco BPM',
+  iban: 'IT65F0760116200001010457131',
+  bic: 'BPPIITRXXX',
+  accountNumber: '',
+  notes: '',
+  createdAt: '2024-01-01T00:00:00Z',
+};
+
 export default function BankCoordinates() {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
@@ -64,7 +75,12 @@ export default function BankCoordinates() {
     if (!isAdmin) { navigate('/'); return; }
     try {
       const saved = localStorage.getItem(LS_KEY);
-      if (saved) setAccounts(JSON.parse(saved));
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setAccounts(parsed.length > 0 ? parsed : [DEFAULT_ACCOUNT]);
+      } else {
+        setAccounts([DEFAULT_ACCOUNT]);
+      }
       const savedLogs = localStorage.getItem(LS_LOG_KEY);
       if (savedLogs) setLogs(JSON.parse(savedLogs));
     } catch {}
