@@ -1,0 +1,8 @@
+{
+  "appId": "it.speaklivetranslate.app",
+  "appName": "SpeakLive Translate",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
+}
