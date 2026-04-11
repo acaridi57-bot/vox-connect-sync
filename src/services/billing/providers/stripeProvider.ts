@@ -3,6 +3,8 @@ import { SUBSCRIPTION_CATALOG, STRIPE_PUBLISHABLE_KEY, STRIPE_CUSTOMER_PORTAL_UR
 
 const isConfigured = () => !!STRIPE_PUBLISHABLE_KEY;
 
+const STRIPE_API_URL = import.meta.env.VITE_STRIPE_API_URL || '';
+
 export const stripeProvider: BillingProviderInterface = {
   provider: 'stripe',
   get isAvailable() { return isConfigured(); },
@@ -12,9 +14,12 @@ export const stripeProvider: BillingProviderInterface = {
   },
 
   async startPurchase(planId: string): Promise<PurchaseSession> {
-    // In production: POST to /api/billing/stripe/create-checkout-session
-    // with { priceId, successUrl, cancelUrl }
-    // The endpoint creates a Stripe Checkout Session and returns the URL
+    const catalog = SUBSCRIPTION_CATALOG.find(p => p.planType === planId);
+    if (!catalog) throw new Error('Piano non trovato.');
+
+    const priceId = catalog.providerProductIds.stripe;
+    if (!priceId) throw new Error('Price ID Stripe non configurato.');
+
     const session: PurchaseSession = {
       id: Date.now().toString(),
       provider: 'stripe',
@@ -22,19 +27,38 @@ export const stripeProvider: BillingProviderInterface = {
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
-    // TODO: Replace with real Stripe Checkout redirect
-    // const response = await fetch('/api/billing/stripe/create-checkout-session', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     priceId: catalog.providerProductIds.stripe,
-    //     successUrl: window.location.origin + '/billing/success',
-    //     cancelUrl: window.location.origin + '/billing/cancel',
-    //   }),
-    // });
-    // const { url } = await response.json();
-    // window.location.href = url;
-    throw new Error('Stripe non è ancora configurato. Aggiungi le chiavi API nel file .env.');
+
+    if (STRIPE_API_URL) {
+      const response = await fetch(`${STRIPE_API_URL}/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId,
+          successUrl: window.location.origin + '/billing/success',
+          cancelUrl: window.location.origin + '/pricing',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Errore nella creazione della sessione di pagamento.');
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } else {
+      const { loadStripe } = await import('@stripe/stripe-js');
+      const stripe = await loadStripe(STRIPE_PUBLISHABLE_KEY);
+      if (!stripe) throw new Error('Errore nel caricamento di Stripe.');
+
+      const { error } = await stripe.redirectToCheckout({
+        lineItems: [{ price: priceId, quantity: 1 }],
+        mode: 'subscription',
+        successUrl: window.location.origin + '/billing/success',
+        cancelUrl: window.location.origin + '/pricing',
+      });
+
+      if (error) throw new Error(error.message || 'Errore durante il checkout.');
+    }
+
+    return session;
   },
 
   async restorePurchases(): Promise<RestorePurchasesResult> {
@@ -42,12 +66,24 @@ export const stripeProvider: BillingProviderInterface = {
   },
 
   async cancelSubscription(): Promise<boolean> {
-    // In production: redirect to customer portal
+    const portalUrl = await this.getCustomerPortalUrl();
+    if (portalUrl) {
+      window.location.href = portalUrl;
+      return true;
+    }
     throw new Error('Utilizza il Customer Portal di Stripe per gestire il tuo abbonamento.');
   },
 
   async getEntitlements(): Promise<EntitlementState> {
-    // In production: GET /api/billing/stripe/entitlements
+    if (STRIPE_API_URL) {
+      try {
+        const response = await fetch(`${STRIPE_API_URL}/entitlements`, {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        if (response.ok) return await response.json();
+      } catch { /* fall through to default */ }
+    }
     return { isPremium: false, planType: 'free', provider: 'stripe', isTrialing: false };
   },
 

@@ -4,12 +4,12 @@ export const SUBSCRIPTION_CATALOG: SubscriptionCatalogItem[] = [
   {
     id: 'premium_monthly',
     planType: 'premium_monthly',
-    name: 'Premium Monthly',
-    price: 7.99,
+    name: 'Premium Mensile',
+    price: 5.99,
     currency: 'EUR',
     interval: 'month',
     providerProductIds: {
-      stripe: import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID || 'speaklivetranslate_premium_monthly',
+      stripe: import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID || 'price_1TKZFeEiPZqCo6Zji3Gq16SK',
       apple: import.meta.env.VITE_APPLE_MONTHLY_PRODUCT_ID || 'com.speaklivetranslate.premium.monthly',
       googleplay: import.meta.env.VITE_GOOGLEPLAY_MONTHLY_PRODUCT_ID || 'premium_monthly',
     },
@@ -17,12 +17,12 @@ export const SUBSCRIPTION_CATALOG: SubscriptionCatalogItem[] = [
   {
     id: 'premium_yearly',
     planType: 'premium_yearly',
-    name: 'Premium Yearly',
-    price: 49.99,
+    name: 'Premium Annuale',
+    price: 44.99,
     currency: 'EUR',
     interval: 'year',
     providerProductIds: {
-      stripe: import.meta.env.VITE_STRIPE_YEARLY_PRICE_ID || 'speaklivetranslate_premium_yearly',
+      stripe: import.meta.env.VITE_STRIPE_YEARLY_PRICE_ID || 'price_1TKZrYEiPZqCo6ZjC4qcZyas',
       apple: import.meta.env.VITE_APPLE_YEARLY_PRODUCT_ID || 'com.speaklivetranslate.premium.yearly',
       googleplay: import.meta.env.VITE_GOOGLEPLAY_YEARLY_PRODUCT_ID || 'premium_yearly',
     },
