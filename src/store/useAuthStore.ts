@@ -100,7 +100,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const found = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
       // Admin requires specific password in demo mode
-      if (found.role === 'admin' && _password !== 'acdigital2026') return false;
+      if (found.role === 'admin' && _password !== '115711') return false;
       set({ currentUser: { ...found, lastAccess: new Date().toISOString() }, isAuthenticated: true });
       return true;
     }

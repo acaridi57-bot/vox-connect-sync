@@ -33,11 +33,12 @@ import type { BillingProvider } from '@/types/billing';
 
 // ── Cross-app revenue ─────────────────────────────────────────────────────────
 
-const CROSS_APP_APIS: Record<string, { label: string; url: string }> = {
-  gestionepassword: { label: 'Gestione Password', url: 'https://gestionepassword.it/admin/revenue' },
-  gestionescadenze: { label: 'Gestione Scadenze', url: 'https://gestionescadenze.app/api/admin/revenue' },
-  speakeasy: { label: 'SpeakEasy', url: '' }, // computed locally
-  librifree: { label: 'Librifree', url: 'https://librifree.it/api/admin/revenue' },
+const CROSS_APP_LABELS: Record<string, string> = {
+  djsengine:        'DJSEngine',
+  librifree:        'LibriFree',
+  gestionescadenze: 'Gestione Scadenze',
+  gestionepassword: 'Gestione Password',
+  speakeasy:        'Speak & Translate',
 };
 
 interface CrossAppData { amount: number; users: number; loading: boolean; }
@@ -144,35 +145,33 @@ export default function AdminUsers() {
   const [showNewUser, setShowNewUser] = useState(false);
   const [newUserForm, setNewUserForm] = useState({ name: '', email: '', role: 'user' as UserRole, plan: 'free' as PlanType });
   const [crossApp, setCrossApp] = useState<Record<string, CrossAppData>>({
-    gestionepassword: { amount: 0, users: 0, loading: true },
+    djsengine:        { amount: 0, users: 0, loading: true },
+    librifree:        { amount: 0, users: 0, loading: true },
     gestionescadenze: { amount: 0, users: 0, loading: true },
-    speakeasy: { amount: 0, users: 0, loading: false },
-    librifree: { amount: 0, users: 0, loading: true },
+    gestionepassword: { amount: 0, users: 0, loading: true },
+    speakeasy:        { amount: 0, users: 0, loading: true },
   });
 
   // ── Cross-app revenue ───────────────────────────────────────────────────────
 
   const fetchCrossAppRevenue = useCallback(async () => {
-    // Compute SpeakEasy locally from users
-    const localRevenue = users.reduce((s, u) => s + u.totalPaid, 0);
-    const localPaying = users.filter(u => u.totalPaid > 0).length;
-    setCrossApp(prev => ({ ...prev, speakeasy: { amount: localRevenue, users: localPaying, loading: false } }));
-
-    for (const [key, cfg] of Object.entries(CROSS_APP_APIS)) {
-      if (!cfg.url) continue;
-      try {
-        const res = await fetch(cfg.url, { signal: AbortSignal.timeout(5000) });
-        if (res.ok) {
-          const d = await res.json();
-          setCrossApp(prev => ({ ...prev, [key]: { amount: d.total_revenue ?? 0, users: d.paying_users ?? 0, loading: false } }));
-        } else {
-          setCrossApp(prev => ({ ...prev, [key]: { amount: 0, users: 0, loading: false } }));
+    try {
+      const res = await fetch('https://gestionescadenze.app/api/stripe-revenue');
+      const data = await res.json();
+      if (res.ok && data?.revenue) {
+        const updated: Record<string, CrossAppData> = {};
+        for (const key of Object.keys(CROSS_APP_LABELS)) {
+          const d = data.revenue[key];
+          updated[key] = { amount: d?.amount ?? 0, users: d?.users ?? 0, loading: false };
         }
-      } catch {
-        setCrossApp(prev => ({ ...prev, [key]: { amount: 0, users: 0, loading: false } }));
+        setCrossApp(updated);
+      } else {
+        setCrossApp(prev => Object.fromEntries(Object.keys(prev).map(k => [k, { amount: 0, users: 0, loading: false }])));
       }
+    } catch {
+      setCrossApp(prev => Object.fromEntries(Object.keys(prev).map(k => [k, { amount: 0, users: 0, loading: false }])));
     }
-  }, [users]);
+  }, []);
 
   useEffect(() => { fetchCrossAppRevenue(); }, [fetchCrossAppRevenue]);
 
@@ -313,12 +312,12 @@ export default function AdminUsers() {
             Totale Generale: €{Object.values(crossApp).reduce((s, d) => s + (d.loading ? 0 : d.amount), 0).toFixed(2)}
           </span>
         </div>
-        <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Object.entries(CROSS_APP_APIS).map(([key, cfg]) => {
+        <div className="p-4 grid grid-cols-2 md:grid-cols-5 gap-4">
+          {Object.entries(CROSS_APP_LABELS).map(([key, label]) => {
             const d = crossApp[key];
             return (
               <div key={key} className="rounded-xl border p-4 flex flex-col gap-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{cfg.label}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
                 {d?.loading
                   ? <div className="flex items-center gap-2 mt-1"><Loader2 className="w-4 h-4 animate-spin opacity-60" /><span className="text-sm opacity-60">Caricamento...</span></div>
                   : <><p className="text-2xl font-bold text-primary">€{(d?.amount ?? 0).toFixed(2)}</p><p className="text-xs text-muted-foreground">{d?.users ?? 0} utenti paganti</p></>
