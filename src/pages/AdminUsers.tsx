@@ -156,7 +156,7 @@ export default function AdminUsers() {
 
   const fetchCrossAppRevenue = useCallback(async () => {
     try {
-      const res = await fetch('https://gestionescadenze.app/api/stripe-revenue');
+      const res = await fetch('https://tbqreletxtzaosvyyvnv.supabase.co/functions/v1/stripe-revenue');
       const data = await res.json();
       if (res.ok && data?.revenue) {
         const updated: Record<string, CrossAppData> = {};
